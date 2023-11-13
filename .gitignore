@@ -8,6 +8,7 @@
 !Linux/
 !OSX/
 !Windows/
+!cmake/
 !Android/CMakeLists.txt
 !iOS/CMakeLists.txt
 !iOS/iOS.cmake
