@@ -1,5 +1,6 @@
 /*
 !CommonBuildParameters.cmake.example
+!CommonBuildParameters.cmake	
 !CompilationFlags.cmake.example
 !CommonCompilerOptions.cmake
 !Android/
