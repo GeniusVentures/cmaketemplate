@@ -1,1 +1,1 @@
-../CommonBuildParameters.cmake
+../cmake/CommonBuildParameters.cmake

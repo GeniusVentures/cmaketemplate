@@ -12,6 +12,15 @@ set(CMAKE_SYSTEM_NAME Android)
 set(CMAKE_SYSTEM_VERSION 28) # API level
 set(ANDROID_NATIVE_API_LEVEL 28)
 
+include(../cmake/functions.cmake)
+get_default_root()
+# --------------------------------------------------------
+# Project
+set(PROJECT_NAME "Default Project Name" ${PROJECT_ROOT_NAME})
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
+
 # --------------------------------------------------------
 # Check Android NDK version
 if(NOT CMAKE_ANDROID_NDK)
@@ -54,10 +63,6 @@ endif()
 # --------------------------------------------------------
 # include common compiler options
 include(../CommonCompilerOptions.CMake)
-
-# --------------------------------------------------------
-# Project
-project(${PROJECT_NAME} C CXX)
 
 # --------------------------------------------------------
 # Turn off examples

@@ -138,3 +138,15 @@ function(install_hfile dir_name)
         PATTERN "*.h*" # select header files hpp or h file
     )
 endfunction()
+
+function(get_default_root)
+  get_filename_component(CURRENT_SOURCE_PARENT "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY ABSOLUTE)
+  get_filename_component(PROJECT_ROOT "${CURRENT_SOURCE_PARENT}" DIRECTORY ABSOLUTE)
+  # Get the full path of the parent directory
+  get_filename_component(PROJECT_ROOT_NAME ${PROJECT_ROOT} NAME)
+  set(CURRENT_SOURCE_PARENT ${CURRENT_SOURCE_PARENT} PARENT_SCOPE)
+  set(PROJECT_ROOT ${PROJECT_ROOT} PARENT_SCOPE)
+  set(PROJECT_ROOT_NAME ${PROJECT_ROOT_NAME} PARENT_SCOPE)
+  message("Default Project name is ${PROJECT_ROOT_NAME}")
+
+endfunction()

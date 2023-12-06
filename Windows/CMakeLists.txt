@@ -6,9 +6,14 @@ if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
     message(FATAL_ERROR "${CMAKE_HOST_SYSTEM_NAME} host system name does not match Windows - Please select the correct folder for configuring project")
 endif()
 
+include(../cmake/functions.cmake)
+get_default_root()
 # --------------------------------------------------------
 # Project
-project(SuperGenius C CXX)
+set(PROJECT_NAME "Default Project Name" ${PROJECT_ROOT_NAME})
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
@@ -53,7 +58,7 @@ include(../CommonCompilerOptions.CMake)
 set(CMAKE_TOOLCHAIN_FILE "${PROJECT_ROOT}/cmake/toolchain/cxx17.cmake")
 
 # --------------------------------------------------------
-# Set Windows crypto and socket library 
+# Set Windows crypto and socket library
 set(USER_ENV_LIBRARY userenv)
 set(WIN_SOCK_LIBRARY wsock32 ws2_32)
 set(WIN_CRYPT_LIBRARY crypt32)
@@ -69,7 +74,7 @@ set(EXTRA_CXX_FLAGS)
 
 # --------------------------------------------------------
 # Set custom subfolder for ABI
-set(ABI_SUBFOLDER_NAME "") 
+set(ABI_SUBFOLDER_NAME "")
 
 # --------------------------------------------------------
 # Include common build paramaeters

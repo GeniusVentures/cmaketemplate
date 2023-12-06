@@ -17,6 +17,13 @@ endif()
 
 set(IOS_DEPLOYMENT_TARGET 12.0)
 
+include(../cmake/functions.cmake)
+get_default_root()
+
+set(PROJECT_NAME "Default Project Name" ${PROJECT_ROOT_NAME})
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
 
 # --------------------------------------------------------
 # Set cross compiling settings

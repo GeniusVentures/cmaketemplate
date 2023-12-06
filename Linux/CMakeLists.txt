@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.12)
 
+include(../cmake/functions.cmake)
+get_default_root()
+
+if (NOT DEFINED PROJECT_NAME)
+set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
+endif()
+
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
+
 # --------------------------------------------------------
 # if on Linux system, build the Linux executables
 if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
