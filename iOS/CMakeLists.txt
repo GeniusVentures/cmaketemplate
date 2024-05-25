@@ -71,7 +71,7 @@ if(NOT CMAKE_SYSTEM_PROCESSOR)
 endif()
 
 # --------------------------------------------------------
-# Config param for android
+# Config param for iOS
 set(ENABLE_ARC "0")
 set(ENABLE_BITCODE NO)
 set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH YES)
@@ -106,5 +106,5 @@ set(ABI_SUBFOLDER_NAME "/${iOS_ABI}")
 set(TESTING OFF)
 
 # --------------------------------------------------------
-# Include common build paramaeters
+# Include common build parameters
 include(../CommonBuildParameters.cmake)

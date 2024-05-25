@@ -25,7 +25,7 @@ set(CMAKE_TOOLCHAIN_FILE "../cmake/toolchain/cxx17.cmake" CACHE INTERNAL "CMake 
 
 # --------------------------------------------------------
 # include common compiler options
-include(../CommonCompilerOptions.CMake)
+include(../CommonCompilerOptions.cmake)
 
 # --------------------------------------------------------
 # Project
