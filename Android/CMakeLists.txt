@@ -1,10 +1,6 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 
-# --------------------------------------------------------
-# if on Linux system, build the Android executables
-if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
-    message(FATAL_ERROR "${CMAKE_HOST_SYSTEM_NAME} host system name does not match Linux for Android cross compiling - Please select the correct folder for configuring project")
-endif()
+
 
 # --------------------------------------------------------
 # Set cross compiling settings
@@ -12,14 +8,7 @@ set(CMAKE_SYSTEM_NAME Android)
 set(CMAKE_SYSTEM_VERSION 28) # API level
 set(ANDROID_NATIVE_API_LEVEL 28)
 
-include(../cmake/functions.cmake)
-get_default_root()
-# --------------------------------------------------------
-# Project
-set(PROJECT_NAME "Default Project Name" ${PROJECT_ROOT_NAME})
-# --------------------------------------------------------
-# Project
-project(${PROJECT_NAME} C CXX)
+
 
 # --------------------------------------------------------
 # Check Android NDK version
@@ -60,9 +49,23 @@ if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
   message(FATAL_ERROR "Android NDK toolchain file ${CMAKE_TOOLCHAIN_FILE} not found")
 endif()
 
+set(Boost_COMPILER "clang")
+
+include(../cmake/functions.cmake)
+get_default_root()
+# --------------------------------------------------------
+# Project
+if (NOT DEFINED PROJECT_NAME)
+  set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
+  endif()
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
+
+set(ANDROID_ABI_FOLDER "/${ANDROID_ABI}")
 # --------------------------------------------------------
 # include common compiler options
-include(../CommonCompilerOptions.CMake)
+include(../CommonCompilerOptions.cmake)
 
 # --------------------------------------------------------
 # Turn off examples
