@@ -76,6 +76,11 @@ set(BUILD_EXAMPLES OFF)
 set(ABI_SUBFOLDER_NAME "/${ANDROID_ABI}")
 
 # --------------------------------------------------------
+# Set host system protoc executable path
+
+set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+
+# --------------------------------------------------------
 # Allow multiple definitions
 set(FORCE_MULTILE OFF)
 
