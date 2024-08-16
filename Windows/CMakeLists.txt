@@ -1,19 +1,22 @@
 cmake_minimum_required(VERSION 3.12)
 
+include(../cmake/functions.cmake)
+get_default_root()
+
+if (NOT DEFINED PROJECT_NAME)
+set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
+endif()
+
+# --------------------------------------------------------
+# Project
+project(${PROJECT_NAME} C CXX)
+
 # --------------------------------------------------------
 # if on Windows system, build the windows executables
 if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
     message(FATAL_ERROR "${CMAKE_HOST_SYSTEM_NAME} host system name does not match Windows - Please select the correct folder for configuring project")
 endif()
 
-include(../cmake/functions.cmake)
-get_default_root()
-# --------------------------------------------------------
-# Project
-set(PROJECT_NAME "Default Project Name" ${PROJECT_ROOT_NAME})
-# --------------------------------------------------------
-# Project
-project(${PROJECT_NAME} C CXX)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
@@ -52,6 +55,9 @@ endforeach()
 # --------------------------------------------------------
 # build common libraries by platforms
 include(../CommonCompilerOptions.CMake)
+
+set(Protobuf_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/cmake")
+set(Protobuf_INCLUDE_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/include/google/protobuf")
 
 # --------------------------------------------------------
 # Set toolchain file
