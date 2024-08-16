@@ -1,1 +1,1 @@
-../cmake/CompilationFlags.cmake
+include(../../cmake/CompilationFlags.cmake)

@@ -1,1 +1,1 @@
-../cmake/CommonBuildParameters.cmake
+include(../../cmake/CommonBuildParameters.cmake)
