@@ -1,6 +1,6 @@
 *
 !CommonBuildParameters.cmake.example
-!CommonBuildParameters.cmake	
+!CommonBuildParameters.cmake
 !CompilationFlags.cmake.example
 !CompilationFlags.cmake
 !CommonCompilerOptions.cmake
@@ -19,3 +19,4 @@
 !.gitignore
 !LICENSE
 !README.MD
+!*.cmake
