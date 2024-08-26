@@ -1,4 +1,4 @@
-### supergenius_install should be called right after add_library(target)
+# supergenius_install should be called right after add_library(target)
 function(supergenius_install target)
     install(TARGETS ${target} EXPORT supergeniusTargets
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -11,7 +11,7 @@ function(supergenius_install target)
         )
 endfunction()
 
-### workaround for imported libraries
+# workaround for imported libraries
 function(supergenius_install_mini target)
     install(TARGETS ${target} EXPORT supergeniusTargets
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
