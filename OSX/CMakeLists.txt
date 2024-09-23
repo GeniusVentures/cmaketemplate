@@ -58,8 +58,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
     "prefer pThreads")
 
 # Allow multiple definitions
-set(FORCE_MULTILE ON CACHE BOOL
-    "Allow multiple definitions")
+set(FORCE_MULTILE ON CACHE BOOL "Allow multiple definitions")
 
 set(MULTIPLE_OPTION "-Xlink=-force:multiple" CACHE STRING "The option to allow multiple")
 
