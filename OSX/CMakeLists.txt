@@ -19,7 +19,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "12.1" CACHE STRING "Minimum OS X deployment ver
 include(../CommonCompilerOptions.CMake)
 
 # Set OSX specific runtime options
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "OSX Architectures")
+set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "OSX Architectures")
 
 set(CMAKE_MACOSX_RPATH 1 CACHE BOOL
     "include rpath in shared library")
