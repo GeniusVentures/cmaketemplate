@@ -8,7 +8,7 @@ set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Project Name")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "12.1" CACHE STRING "Minimum OS X deployment version" FORCE)
 
 # Set OSX specific runtime options
-set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "OSX Architectures")
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "OSX Architectures")
 
 # Project
 project(${PROJECT_NAME} C CXX)
