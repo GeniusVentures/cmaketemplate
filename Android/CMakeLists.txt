@@ -19,7 +19,7 @@ set(CMAKE_ANDROID_NDK_VERSION_MINOR ${CMAKE_MATCH_2})
 
 message("--Android NDK version: ${CMAKE_ANDROID_NDK_VERSION}.${CMAKE_ANDROID_NDK_VERSION_MINOR}")
 
-if (NOT CMAKE_ANDROID_NDK_VERSION EQUAL 25)
+if (NOT CMAKE_ANDROID_NDK_VERSION EQUAL 27)
   message(FATAL_ERROR "Android NDK LTS Version (r25b) stable long term support version required")
 endif()
 
