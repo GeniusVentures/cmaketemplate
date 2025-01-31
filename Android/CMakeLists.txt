@@ -79,6 +79,8 @@ set(EXTRA_CXX_FLAGS -Wno-error)
 
 set(TESTING OFF)
 
+SET(USE_BOOST_INCLUDE_POSTFIX ON)
+# --------------------------------------------------------
 # Include common build parameters
 include(../CommonBuildParameters.cmake)
 
