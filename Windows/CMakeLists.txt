@@ -30,7 +30,7 @@ endif (CMAKE_BUILD_TYPE EQUAL Debug)
 if (CMAKE_BUILD_TYPE EQUAL Release)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
-    set(MSVC_RUNTIME_LIBRARY_OPTION "MultiThreaded$<$<CONFIG:Realease>:Release>")
+    set(MSVC_RUNTIME_LIBRARY_OPTION "MultiThreaded$<$<CONFIG:Release>:Release>")
 endif (CMAKE_BUILD_TYPE EQUAL Release)
 
 print("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")

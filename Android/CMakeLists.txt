@@ -19,7 +19,7 @@ set(CMAKE_ANDROID_NDK_VERSION_MINOR ${CMAKE_MATCH_2})
 
 message("--Android NDK version: ${CMAKE_ANDROID_NDK_VERSION}.${CMAKE_ANDROID_NDK_VERSION_MINOR}")
 
-if (NOT CMAKE_ANDROID_NDK_VERSION EQUAL 25)
+if (NOT CMAKE_ANDROID_NDK_VERSION EQUAL 27)
   message(FATAL_ERROR "Android NDK LTS Version (r25b) stable long term support version required")
 endif()
 
@@ -36,6 +36,8 @@ endif()
 
 # Config param for android
 set(CMAKE_ANDROID_STL_TYPE c++_static)
+
+set(ANDROID_USE_LEGACY_TOOLCHAIN_FILE OFF CACHE BOOL "Disabling legacy toolchain behavior")
 
 # Set toolchain file
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake")
