@@ -8,7 +8,7 @@ set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
 endif()
 
 # Project
-project(${PROJECT_NAME} C CXX)
+project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # if on Linux system, build the Linux executables
 if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Linux")
@@ -18,13 +18,13 @@ endif()
 # Set toolchain file before the project call
 get_filename_component(_LINUX_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY ABSOLUTE)
 get_filename_component(_BUILD_FOLDER "${_LINUX_FOLDER}" DIRECTORY ABSOLUTE)
-set(CMAKE_TOOLCHAIN_FILE "../cmake/toolchain/cxx17.cmake" CACHE INTERNAL "CMake toolchain file used" FORCE)
+#set(CMAKE_TOOLCHAIN_FILE "../cmake/toolchain/cxx17.cmake" CACHE INTERNAL "CMake toolchain file used" FORCE)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # include common compiler options
 include(../CommonCompilerOptions.cmake)
-
-# Project
-project(${PROJECT_NAME} C CXX)
 
 # Set OS threading settings
 set(CMAKE_THREAD_LIBS_INIT "-lpthread")
