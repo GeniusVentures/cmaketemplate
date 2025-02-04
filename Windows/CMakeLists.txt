@@ -7,13 +7,19 @@ if (NOT DEFINED PROJECT_NAME)
 set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Project
-project(${PROJECT_NAME} C CXX)
+project(${PROJECT_NAME} LANGUAGES C CXX)
 
 # if on Windows system, build the windows executables
 if (NOT ${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
     message(FATAL_ERROR "${CMAKE_HOST_SYSTEM_NAME} host system name does not match Windows - Please select the correct folder for configuring project")
 endif()
+
+
 
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
@@ -55,9 +61,6 @@ include(../CommonCompilerOptions.CMake)
 
 set(Protobuf_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/cmake")
 set(Protobuf_INCLUDE_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/include/google/protobuf")
-
-# Set toolchain file
-set(CMAKE_TOOLCHAIN_FILE "${PROJECT_ROOT}/cmake/toolchain/cxx17.cmake")
 
 # Set Windows crypto and socket library
 set(USER_ENV_LIBRARY userenv)
