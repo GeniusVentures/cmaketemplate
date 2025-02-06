@@ -5,11 +5,9 @@ set(CMAKE_SYSTEM_NAME Android)
 set(CMAKE_SYSTEM_VERSION 28) # API level
 set(ANDROID_NATIVE_API_LEVEL 28)
 
-
-
 # Check Android NDK version
 if(NOT CMAKE_ANDROID_NDK)
-	message(FATAL_ERROR "Cannot find Android NDK, make sure you pass -DCMAKE_ANDROID_NDK=[path_to_NDK]")
+    message(FATAL_ERROR "Cannot find Android NDK, make sure you pass -DCMAKE_ANDROID_NDK=[path_to_NDK]")
 endif()
 
 file(READ "${CMAKE_ANDROID_NDK}/source.properties" SOURCE_PROPERTIES_CONTENT)
@@ -19,8 +17,8 @@ set(CMAKE_ANDROID_NDK_VERSION_MINOR ${CMAKE_MATCH_2})
 
 message("--Android NDK version: ${CMAKE_ANDROID_NDK_VERSION}.${CMAKE_ANDROID_NDK_VERSION_MINOR}")
 
-if (NOT CMAKE_ANDROID_NDK_VERSION EQUAL 27)
-  message(FATAL_ERROR "Android NDK LTS Version (r25b) stable long term support version required")
+if(NOT CMAKE_ANDROID_NDK_VERSION EQUAL 27)
+    message(FATAL_ERROR "Android NDK LTS Version (r25b) stable long term support version required")
 endif()
 
 # Check required input args
@@ -30,9 +28,7 @@ endif()
 
 set(CMAKE_ANDROID_ARCH_ABI ${ANDROID_ABI})
 
-if(NOT ANDROID_TOOLCHAIN)
-    message(FATAL_ERROR "Cannot find ANDROID_TOOLCHAIN, make sure you pass -DANDROID_TOOLCHAIN=[e.g clang]")
-endif()
+set(ANDROID_TOOLCHAIN "clang" CACHE STRING "Anddroid Toolchian")
 
 # Config param for android
 set(CMAKE_ANDROID_STL_TYPE c++_static)
@@ -55,10 +51,12 @@ get_default_root()
 if(NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
 endif()
+
 # Project
 project(${PROJECT_NAME} C CXX)
 
 set(ANDROID_ABI_FOLDER "/${ANDROID_ABI}")
+
 # include common compiler options
 include(../CommonCompilerOptions.cmake)
 
@@ -80,6 +78,7 @@ set(EXTRA_CXX_FLAGS -Wno-error)
 set(TESTING OFF)
 
 SET(USE_BOOST_INCLUDE_POSTFIX ON)
+
 # --------------------------------------------------------
 # Include common build parameters
 include(../CommonBuildParameters.cmake)
