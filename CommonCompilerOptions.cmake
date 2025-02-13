@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_compile_options("-fsanitize=${SANITIZE_CODE}")
+    add_link_options("-fsanitize=${SANITIZE_CODE}")
+endif()
+
 # Package config
 set(CPACK_PACKAGE_VERSION_MAJOR "21" CACHE STRING "Package config major")
 set(CPACK_PACKAGE_VERSION_MINOR "0" CACHE STRING "Package config minor")
