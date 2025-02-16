@@ -56,10 +56,11 @@ endif()
 
 #define zkllvm directory
 if(NOT DEFINED ZKLLVM_DIR)
-    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI_FOLDER}")
+    get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI}")
         message(STATUS "Setting default zkLLVM directory")
-        get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-        set(ZKLLVM_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI_FOLDER}" CACHE STRING "Default zkLLVM Library")
+        
+        set(ZKLLVM_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_DIR NORMALIZE "${ZKLLVM_DIR}")
@@ -70,16 +71,13 @@ if(NOT DEFINED ZKLLVM_DIR)
         set(GITHUB_REPO "GeniusVentures/zkLLVM")
         set(GITHUB_API_URL "https://api.github.com/repos/${GITHUB_REPO}/releases")
 
-        # Detect platform
-        get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-
         # Define the target branch
         set(TARGET_BRANCH "develop")
 
         # Construct the release download URL
         if(ANDROID)
             set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${TARGET_BRANCH}-Release.tar.gz")
-            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${ANDROID_ABI_FOLDER}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
+            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
         else()
             set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${TARGET_BRANCH}-Release.tar.gz")
             set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
@@ -111,7 +109,7 @@ if(NOT DEFINED ZKLLVM_DIR)
         endif()
 
         # Set extracted directory as ZKLLVM_DIR
-        set(ZKLLVM_DIR "${ZKLLVM_EXTRACT_DIR}/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI_FOLDER}" CACHE STRING "Downloaded zkLLVM Library")
+        set(ZKLLVM_DIR "${ZKLLVM_EXTRACT_DIR}/build/${BUILD_PLATFORM_NAME}/Release/${ANDROID_ABI}" CACHE STRING "Downloaded zkLLVM Library")
 
         message(STATUS "zkLLVM downloaded and extracted to ${ZKLLVM_DIR}")
     endif()
