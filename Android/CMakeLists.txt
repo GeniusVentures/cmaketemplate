@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 
 set(ANDROID_PLATFORM_LEVEL 28)
 set(ANDROID_NATIVE_API_LEVEL ${ANDROID_PLATFORM_LEVEL})

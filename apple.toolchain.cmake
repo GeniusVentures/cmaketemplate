@@ -151,8 +151,6 @@
 # command.
 #
 
-cmake_minimum_required(VERSION 3.8.0)
-
 # CMake invokes the toolchain file twice during the first build, but only once during subsequent rebuilds.
 if(DEFINED ENV{_IOS_TOOLCHAIN_HAS_RUN})
     return()
@@ -1026,9 +1024,11 @@ elseif(NOT DEFINED TOOLCHAIN_FILE_PROCESSED)
     endif()
 
     set(ASM_ARCHES "")
+
     foreach(ASM_ARCH IN LISTS CMAKE_OSX_ARCHITECTURES)
         set(ASM_ARCHES "${ASM_ARCHES} -arch ${ASM_ARCH}")
     endforeach()
+
     set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS} -x assembler-with-cpp ${ASM_ARCHES} ${APPLE_TARGET_TRIPLE_FLAG}" CACHE INTERNAL
         "Flags used by the compiler for all ASM build types.")
 
