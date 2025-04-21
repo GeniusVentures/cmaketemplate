@@ -25,8 +25,5 @@ include(../CommonCompilerOptions.cmake)
 # Set extra compiler flags
 set(EXTRA_CXX_FLAGS)
 
-# Set custom subfolder for ABI
-set(ABI_SUBFOLDER_NAME "")
-
 # Include common build parameters
 include(../CommonBuildParameters.cmake)

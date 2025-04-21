@@ -41,8 +41,5 @@ set(USER_ENV_LIBRARY userenv)
 set(WIN_SOCK_LIBRARY wsock32 ws2_32)
 set(WIN_CRYPT_LIBRARY crypt32)
 
-# Set custom subfolder for ABI
-set(ABI_SUBFOLDER_NAME "")
-
 # Include common build paramaeters
 include(../CommonBuildParameters.cmake)

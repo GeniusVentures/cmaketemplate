@@ -19,19 +19,16 @@ set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Project name")
 # Project
 project(${PROJECT_NAME} C CXX)
 
-# include common compiler options
-include(../CommonCompilerOptions.CMake)
-
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM "BOTH")
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # Turn off examples
 set(BUILD_EXAMPLES OFF)
 
-# Set custom subfolder for ABI
-set(ABI_SUBFOLDER_NAME "/aarch64")
+set(BUILD_TESTING OFF)
 
-set(TESTING OFF)
+# include common compiler options
+include(../CommonCompilerOptions.CMake)
 
 # Include common build parameters
 include(../CommonBuildParameters.cmake)

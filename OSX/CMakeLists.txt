@@ -48,8 +48,5 @@ set(EXTRA_CXX_FLAGS "" CACHE STRING "")
 
 set(TESTING ON CACHE BOOL "Build tests")
 
-# Set custom subfolder for ABI
-set(ABI_SUBFOLDER_NAME "" CACHE STRING "Set custom ABI subfolder")
-
 # Include common build parameters
 include(../CommonBuildParameters.cmake)
