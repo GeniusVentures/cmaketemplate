@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if(DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${SANITIZE_CODE}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${SANITIZE_CODE}")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${SANITIZE_CODE}")
@@ -123,20 +123,19 @@ if(NOT DEFINED ZKLLVM_DIR)
     endif()
 endif()
 
-# define third party directory
-if(NOT DEFINED THIRDPARTY_DIR)
-    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty/README.md")
-        print("Setting default third party directory")
-        set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
-
-        # get absolute path
-        cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
-    else()
-        message(FATAL_ERROR "Cannot find thirdparty directory required to build")
-    endif()
-endif()
-
 if(NOT DEFINED THIRDPARTY_BUILD_DIR)
+    # define third party directory
+    if(NOT DEFINED THIRDPARTY_DIR)
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty/README.md")
+            print("Setting default third party directory")
+            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
+
+            # get absolute path
+            cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
+        else()
+            message(FATAL_ERROR "Cannot find thirdparty directory required to build")
+        endif()
+    endif()
     print("Setting third party build directory default")
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     set(THIRDPARTY_BUILD_DIR "${THIRDPARTY_DIR}/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default Third Party Build Directory")
