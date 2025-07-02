@@ -19,6 +19,19 @@ endif()
 get_filename_component(_LINUX_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY ABSOLUTE)
 get_filename_component(_BUILD_FOLDER "${_LINUX_FOLDER}" DIRECTORY ABSOLUTE)
 
+set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
+
+# Normalize architecture names
+if(ARCH MATCHES "(x86_64|amd64|AMD64)")
+    set(ARCH "x86_64")
+elseif(ARCH MATCHES "(aarch64|arm64|ARM64)")
+    set(ARCH "aarch64")
+else()
+    message(WARNING "Unknown Linux architecture: ${ARCH}, using as-is")
+endif()
+
+set(ABI_SUBFOLDER_NAME "/${ARCH}")
+
 # include common compiler options
 include(../CommonCompilerOptions.cmake)
 
