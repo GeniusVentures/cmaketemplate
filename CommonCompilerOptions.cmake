@@ -77,20 +77,30 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
 
         # Define GitHub repository information
         set(GITHUB_REPO "GeniusVentures/zkLLVM")
-        set(GITHUB_API_URL "https://api.github.com/repos/${GITHUB_REPO}/releases")
 
         # Define the target branch
-        set(TARGET_BRANCH "develop")
+        set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+        if(DEFINED GENIUS_DEPENDENCY_BRANCH)
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+        endif()
+
+        set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
+        if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG)
+            set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
+        endif()
 
         # Construct the release download URL
         if(ANDROID)
-            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${TARGET_BRANCH}-Release.tar.gz")
-            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${CMAKE_BUILD_TYPE}.tar.gz")
+            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/$TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-${CMAKE_BUILD_TYPE}.tar.gz")
+            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
         else()
-            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${TARGET_BRANCH}-Release.tar.gz")
-            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
+            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
         endif()
-
+        message(WARNING "URL IS ${ZKLLVM_RELEASE_URL}")
         set(ZKLLVM_ARCHIVE "${CMAKE_BINARY_DIR}/${ZKLLVM_ARCHIVE_NAME}")
         set(ZKLLVM_EXTRACT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM")
 
@@ -124,16 +134,66 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
 endif()
 
 if(NOT DEFINED THIRDPARTY_BUILD_DIR)
+    get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     # define third party directory
     if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty/README.md")
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             print("Setting default third party directory")
             set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
 
             # get absolute path
             cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
         else()
-            message(FATAL_ERROR "Cannot find thirdparty directory required to build")
+            message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
+            # Define GitHub repository information
+            set(GITHUB_REPO "GeniusVentures/thirdparty")
+
+            # Define the target branch
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+            if(DEFINED GENIUS_DEPENDENCY_BRANCH)
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+            endif()
+
+            set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
+            if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG) 
+                set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
+            endif()
+            # Construct the release download URL
+            if(ANDROID)
+                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${CMAKE_BUILD_TYPE}.tar.gz")
+                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/$TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-${CMAKE_BUILD_TYPE}.tar.gz")
+                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+            else()
+                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
+                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+            endif()
+            message(WARNING "URL IS ${THIRDPARTY_RELEASE_URL}")
+            set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
+            set(THIRDPARTY_EXTRACT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty")
+            # Download the latest release
+            execute_process(
+                COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
+                RESULT_VARIABLE DOWNLOAD_RESULT
+            )
+
+            if(NOT DOWNLOAD_RESULT EQUAL 0)
+                message(FATAL_ERROR "Failed to download thirdparty archive from ${THIRDPARTY_RELEASE_URL}")
+            endif()
+
+            file(MAKE_DIRECTORY ${THIRDPARTY_EXTRACT_DIR})
+            # Extract the archive to the correct location
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E tar xzf ${THIRDPARTY_ARCHIVE}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../../thirdparty
+                RESULT_VARIABLE EXTRACT_RESULT
+            )
+
+            if(NOT EXTRACT_RESULT EQUAL 0)
+                message(FATAL_ERROR "Failed to extract thirdparty archive")
+            endif()
+            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
         endif()
     endif()
     print("Setting third party build directory default")
