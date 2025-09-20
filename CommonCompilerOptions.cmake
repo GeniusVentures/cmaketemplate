@@ -15,6 +15,11 @@ if(DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_link_options("-fsanitize=${SANITIZE_CODE}")
 endif()
 
+#TODO Remove this once we update gRPC, its dependencies, fix libp2p and change some of our internal projects
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-template-arg-list-after-template-kw")
+endif()
+
 # Package config
 set(CPACK_PACKAGE_VERSION_MAJOR "21" CACHE STRING "Package config major")
 set(CPACK_PACKAGE_VERSION_MINOR "0" CACHE STRING "Package config minor")
@@ -155,7 +160,7 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
             endif()
 
             set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
-            if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG) 
+            if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG)
                 set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
             endif()
             # Construct the release download URL

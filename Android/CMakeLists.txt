@@ -36,29 +36,20 @@ if(NOT DEFINED PROJECT_NAME)
 endif()
 
 # Project
-project(${PROJECT_NAME} C CXX)
+project(${PROJECT_NAME} LANGUAGES C CXX)
 
-# Turn off examples
 set(BUILD_EXAMPLES OFF)
 
-# Set custom subfolder for ABI
 set(ABI_SUBFOLDER_NAME "/${ANDROID_ABI}" CACHE STRING "ABI subfolder")
 
-# Set host system protoc executable path
 set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
 
-# Set extra compiler flags
-set(EXTRA_CXX_FLAGS -Wno-error)
+set(BUILD_TESTING OFF)
 
 set(TESTING OFF)
 
 SET(USE_BOOST_INCLUDE_POSTFIX ON)
 
-# include common compiler options
 include(../CommonCompilerOptions.cmake)
 
-# --------------------------------------------------------
-# Include common build parameters
 include(../CommonBuildParameters.cmake)
-
-message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
