@@ -77,7 +77,7 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
-    else()
+    elseif(NOT PROJECT_NAME STREQUAL "zkLLVM")
         message(STATUS "zkLLVM directory not found, fetching latest release...")
 
         # Define GitHub repository information
@@ -85,8 +85,20 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
 
         # Define the target branch
         set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+        if(ANDROID)
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-develop-${CMAKE_BUILD_TYPE}")
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-develop-${CMAKE_BUILD_TYPE}")
+        endif()
         if(DEFINED GENIUS_DEPENDENCY_BRANCH)
-            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+            if(ANDROID)
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+            else()
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+            endif()
         endif()
 
         set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
@@ -155,8 +167,20 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
 
             # Define the target branch
             set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+            if(ANDROID)
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-develop-${CMAKE_BUILD_TYPE}")
+            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-develop-${CMAKE_BUILD_TYPE}")
+            endif()
             if(DEFINED GENIUS_DEPENDENCY_BRANCH)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+                if(ANDROID)
+                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+                elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+                else()
+                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+                endif()
             endif()
 
             set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
