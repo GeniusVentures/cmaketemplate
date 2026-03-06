@@ -271,8 +271,6 @@ include_directories(
   ${PROJECT_ROOT}/include
 )
 
-
-
 ADD_DEFINITIONS(-D_HAS_AUTO_PTR_ETC=1)
 
 print("CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}")
@@ -292,18 +290,19 @@ link_directories(
   ${ipfs-lite-cpp_LIB_DIR}
 )
 
+# Add source directory
 add_subdirectory(${PROJECT_ROOT}/src ${CMAKE_BINARY_DIR}/src)
-#add_subdirectory(${PROJECT_ROOT}/node ${CMAKE_BINARY_DIR}/node)
 
-
-if (TESTING)
+# Add test directory (if testing enabled)
+if(TESTING)
   enable_testing()
   add_subdirectory(${PROJECT_ROOT}/test ${CMAKE_BINARY_DIR}/test)
-endif ()
+endif()
 
-if (BUILD_EXAMPLES)
-    add_subdirectory(${PROJECT_ROOT}/example ${CMAKE_BINARY_DIR}/example)
-endif ()
+# Add examples directory (if building examples)
+if(BUILD_EXAMPLES)
+  add_subdirectory(${PROJECT_ROOT}/example ${CMAKE_BINARY_DIR}/example)
+endif()
 
 install(
   EXPORT supergeniusTargets
