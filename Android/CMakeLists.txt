@@ -48,6 +48,12 @@ set(BUILD_TESTING OFF)
 
 set(TESTING OFF)
 
+add_library(android::log INTERFACE IMPORTED GLOBAL)
+set_target_properties(android::log PROPERTIES IMPORTED_LIBNAME "log")
+
+add_library(android::android INTERFACE IMPORTED GLOBAL)
+set_target_properties(android::android PROPERTIES IMPORTED_LIBNAME "android")
+
 SET(USE_BOOST_INCLUDE_POSTFIX ON)
 
 include(../CommonCompilerOptions.cmake)
