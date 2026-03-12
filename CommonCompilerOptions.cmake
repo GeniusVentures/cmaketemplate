@@ -160,6 +160,12 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
 
             # get absolute path
             cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
+        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+            print("Setting default third party directory")
+            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty" CACHE STRING "Default ThirdParty Library")
+
+            # get absolute path
+            cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
         else()
             message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
             # Define GitHub repository information
