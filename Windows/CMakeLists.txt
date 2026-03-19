@@ -28,8 +28,8 @@ add_compile_definitions(_WIN32_WINNT=0x0A00)
 
 include(../CommonCompilerOptions.cmake)
 
-set(Protobuf_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/cmake")
-set(Protobuf_INCLUDE_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/include/google/protobuf")
+#set(Protobuf_DIR "${_THIRDPARTY_BUILD_DIR}/protobuf/lib/cmake/protobuf")
+#set(Protobuf_INCLUDE_DIR "${_THIRDPARTY_BUILD_DIR}/grpc/include/google/protobuf")
 
 set(USER_ENV_LIBRARY userenv)
 set(WIN_SOCK_LIBRARY wsock32 ws2_32)
