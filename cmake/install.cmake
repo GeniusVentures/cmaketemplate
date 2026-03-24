@@ -1,6 +1,6 @@
 # supergenius_install should be called right after add_library(target)
-function(supergenius_install target)
-    install(TARGETS ${target} EXPORT supergeniusTargets
+function(project_install target)
+    install(TARGETS ${target} EXPORT ${PROJECT_ROOT_NAME}Targets
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME       DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -12,13 +12,13 @@ function(supergenius_install target)
 endfunction()
 
 # workaround for imported libraries
-function(supergenius_install_mini target)
-    install(TARGETS ${target} EXPORT supergeniusTargets
+function(project_install_mini target)
+    install(TARGETS ${target} EXPORT ${PROJECT_ROOT_NAME}Targets
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         )
 endfunction()
 
-function(supergenius_install_setup)
+function(project_install_setup, name_space)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs HEADER_DIRS)
@@ -35,14 +35,14 @@ function(supergenius_install_setup)
     endforeach ()
 
     install(
-        EXPORT supergeniusTargets
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/supergenius
-        NAMESPACE sgns::
+        EXPORT ${PROJECT_ROOT_NAME}Targets
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_ROOT_NAME}
+        NAMESPACE "${name_space}"
     )
     export(
-        EXPORT supergeniusTargets
-        FILE ${CMAKE_CURRENT_BINARY_DIR}/supergeniusTargets.cmake
-        NAMESPACE sgns::
+        EXPORT ${PROJECT_ROOT_NAME}Targets
+        FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_ROOT_NAME}Targets.cmake
+        NAMESPACE ${name_space}
     )
 
 endfunction()

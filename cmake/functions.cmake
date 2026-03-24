@@ -125,7 +125,7 @@ function(add_proto_library NAME)
     set_target_properties(${NAME} PROPERTIES PUBLIC_HEADER "${H}")
   endforeach ()
 
-  install(TARGETS ${NAME} EXPORT supergeniusTargets
+  install(TARGETS ${NAME} EXPORT ${PROJECT_ROOT_NAME}Targets
       PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PB_REL_PATH}
       )
 
