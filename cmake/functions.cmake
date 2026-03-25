@@ -1,3 +1,4 @@
+
 function(disable_clang_tidy target)
   set_target_properties(${target} PROPERTIES
       C_CLANG_TIDY ""
@@ -207,3 +208,53 @@ function (TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
     target_link_libraries(${target} PUBLIC ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
   ENDIF ()
 endfunction ()
+
+# Finds the super root directory of the current Git repository (works inside nested submodules)
+# returns the top level project that has this as a submodule
+# Simple function to get the immediate superproject root (when this is a git submodule)
+function(get_super_root RESULT_VAR)
+  find_package(Git QUIET)
+  if(NOT GIT_FOUND)
+    set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
+    message(WARNING "Git not found, using current source dir")
+    return()
+  endif()
+
+  # Find the nearest repo containing the current source directory
+  execute_process(
+          COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          OUTPUT_VARIABLE current_root
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+          RESULT_VARIABLE result
+          ERROR_QUIET
+  )
+
+  if(NOT result EQUAL 0 OR "${current_root}" STREQUAL "")
+    set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
+    message(WARNING "Not inside a git repo, using current source dir")
+    return()
+  endif()
+
+  file(REAL_PATH "${current_root}" current_root)
+
+  while(TRUE)
+    execute_process(
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --show-superproject-working-tree
+            WORKING_DIRECTORY "${current_root}"
+            OUTPUT_VARIABLE super_root
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE result
+            ERROR_QUIET
+    )
+
+    if(NOT result EQUAL 0 OR "${super_root}" STREQUAL "")
+      break()
+    endif()
+
+    file(REAL_PATH "${super_root}" current_root)
+  endwhile()
+
+  set(${RESULT_VAR} "${current_root}" PARENT_SCOPE)
+  message(STATUS "Found top-level project root: ${current_root}")
+endfunction()

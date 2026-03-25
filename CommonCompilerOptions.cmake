@@ -15,6 +15,7 @@ if(DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_link_options("-fsanitize=${SANITIZE_CODE}")
 endif()
 
+#
 #TODO Remove this once we update gRPC, its dependencies, fix libp2p and change some of our internal projects
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-template-arg-list-after-template-kw")
@@ -60,71 +61,60 @@ else()
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-#define zkllvm directory
+get_super_root(PROJECT_SUPER_ROOT)
+if (NOT DEFINED PROJECT_ROOT_NAME)
+    # Get absolute path
+    cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}../../")
+endif()
+
+print("Project root is ${PROJECT_ROOT_NAME}")
+
+# Define zkllvm directory
 if(NOT DEFINED ZKLLVM_BUILD_DIR)
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    if(EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to same as build type")
 
-        set(ZKLLVM_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
-    elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
+    elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to release as a fallback")
 
-        set(ZKLLVM_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
-    elseif(NOT PROJECT_NAME STREQUAL "zkLLVM")
+    else()
         message(STATUS "zkLLVM directory not found, fetching latest release...")
 
         # Define GitHub repository information
         set(GITHUB_REPO "GeniusVentures/zkLLVM")
+        set(GITHUB_API_URL "https://api.github.com/repos/${GITHUB_REPO}/releases")
 
         # Define the target branch
-        set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
-        if(ANDROID)
-            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-develop-${CMAKE_BUILD_TYPE}")
-        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
-            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-develop-${CMAKE_BUILD_TYPE}")
-        endif()
-        if(DEFINED GENIUS_DEPENDENCY_BRANCH)
-            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
-            if(ANDROID)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-            else()
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-            endif()
-        endif()
-
-        set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
-        if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG)
-            set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
-        endif()
+        set(TARGET_BRANCH "develop")
 
         # Construct the release download URL
         if(ANDROID)
-            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${CMAKE_BUILD_TYPE}.tar.gz")
-            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/$TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
-        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-${CMAKE_BUILD_TYPE}.tar.gz")
-            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-Release.tar.gz")
+            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
+        elseif(DEFINED ARCH AND NOT "${ARCH}" STREQUAL "")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-Release.tar.gz")
+            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${ARCH}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
         else()
-            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
-            set(ZKLLVM_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${ZKLLVM_ARCHIVE_NAME}")
+            set(ZKLLVM_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-Release.tar.gz")
+            set(ZKLLVM_RELEASE_URL "https://github.com/${GITHUB_REPO}/releases/download/${BUILD_PLATFORM_NAME}-${TARGET_BRANCH}-Release/${ZKLLVM_ARCHIVE_NAME}")
         endif()
-        message(WARNING "URL IS ${ZKLLVM_RELEASE_URL}")
+
         set(ZKLLVM_ARCHIVE "${CMAKE_BINARY_DIR}/${ZKLLVM_ARCHIVE_NAME}")
-        set(ZKLLVM_EXTRACT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM")
+        set(ZKLLVM_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/zkLLVM")
 
         # Download the latest release
         execute_process(
-            COMMAND curl -L -o ${ZKLLVM_ARCHIVE} ${ZKLLVM_RELEASE_URL}
-            RESULT_VARIABLE DOWNLOAD_RESULT
+                COMMAND curl -L -o ${ZKLLVM_ARCHIVE} ${ZKLLVM_RELEASE_URL}
+                RESULT_VARIABLE DOWNLOAD_RESULT
         )
 
         if(NOT DOWNLOAD_RESULT EQUAL 0)
@@ -134,9 +124,9 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
         file(MAKE_DIRECTORY ${ZKLLVM_EXTRACT_DIR})
         # Extract the archive to the correct location
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xzf ${ZKLLVM_ARCHIVE}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../../zkLLVM
-            RESULT_VARIABLE EXTRACT_RESULT
+                COMMAND ${CMAKE_COMMAND} -E tar xzf ${ZKLLVM_ARCHIVE}
+                WORKING_DIRECTORY ${PROJECT_SUPER_ROOT}/zkLLVM/
+                RESULT_VARIABLE EXTRACT_RESULT
         )
 
         if(NOT EXTRACT_RESULT EQUAL 0)
@@ -145,7 +135,8 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR)
 
         # Set extracted directory as ZKLLVM_BUILD_DIR
         set(ZKLLVM_BUILD_DIR "${ZKLLVM_EXTRACT_DIR}/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Downloaded zkLLVM Library")
-
+        # Get absolute path
+        cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
         message(STATUS "zkLLVM downloaded and extracted to ${ZKLLVM_BUILD_DIR}")
     endif()
 endif()
@@ -154,18 +145,9 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     # define third party directory
     if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
-            print("Setting default third party directory")
-            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
-
-            # get absolute path
-            cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
-        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
-            print("Setting default third party directory")
-            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../thirdparty" CACHE STRING "Default ThirdParty Library")
-
-            # get absolute path
-            cmake_path(SET THIRDPARTY_DIR NORMALIZE "${THIRDPARTY_DIR}")
+        if(EXISTS "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+            print("Found third party directory as super root")
+            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty" CACHE STRING "Default ThirdParty Library")
         else()
             message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
             # Define GitHub repository information
@@ -206,7 +188,7 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
             endif()
             message(WARNING "URL IS ${THIRDPARTY_RELEASE_URL}")
             set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
-            set(THIRDPARTY_EXTRACT_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty")
+            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
             # Download the latest release
             execute_process(
                 COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
