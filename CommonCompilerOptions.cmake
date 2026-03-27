@@ -1,6 +1,7 @@
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_EXTENSIONS OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,23 +16,15 @@ if(DEFINED SANITIZE_CODE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     add_link_options("-fsanitize=${SANITIZE_CODE}")
 endif()
 
-#
-#TODO Remove this once we update gRPC, its dependencies, fix libp2p and change some of our internal projects
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-template-arg-list-after-template-kw")
-endif()
-
 # Package config
 set(CPACK_PACKAGE_VERSION_MAJOR "21" CACHE STRING "Package config major")
 set(CPACK_PACKAGE_VERSION_MINOR "0" CACHE STRING "Package config minor")
 set(CPACK_PACKAGE_VERSION_PATCH "0" CACHE STRING "Package config patch")
 set(CPACK_PACKAGE_VERSION_PRE_RELEASE "12" CACHE STRING "Package config pre-release")
 set(CPACK_PACKAGE_VENDOR "Genius Ventures" CACHE STRING "The Package Vendor default")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "")
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME})
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL
-    "")
 
 include(GNUInstallDirs)
 include(GenerateExportHeader)
@@ -42,9 +35,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/install.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/definition.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CompilationFlags.cmake)
 
-check_cxx_compiler_flag(-std=c++14 CXX14_SUPPORT)
-check_cxx_compiler_flag(-std=c++17 CXX17_SUPPORT)
-
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/cmake/compile_option_by_platform/${CMAKE_SYSTEM_NAME}.cmake")
     print("add compile option: ${CMAKE_CURRENT_LIST_DIR}/cmake/compile_option_by_platform/${CMAKE_SYSTEM_NAME}.cmake")
     include("${CMAKE_CURRENT_LIST_DIR}/cmake/compile_option_by_platform/${CMAKE_SYSTEM_NAME}.cmake")
@@ -53,11 +43,7 @@ endif()
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "The default build type")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_CXX_FLAGS}" CACHE STRING "default CXX_Flags")
 
-if(NOT EXISTS "${CMAKE_TOOLCHAIN_FILE}")
-    # https://cgold.readthedocs.io/en/latest/tutorials/toolchain/globals/cxx-standard.html#summary
-    print("CMAKE_TOOLCHAIN_FILE not found, setting CMAKE_POSITION_INDEPENDENT_CODE ON")
-    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE CACHE BOOL "Position Independent Code")
-else()
+if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
@@ -70,19 +56,19 @@ endif()
 print("Project root is ${PROJECT_ROOT_NAME}")
 
 # Define zkllvm directory
-if(NOT DEFINED ZKLLVM_BUILD_DIR)
+if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    if(EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    if(EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to same as build type")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
-    elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
+    elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to release as a fallback")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
@@ -145,11 +131,12 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     # define third party directory
     if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+        if(EXISTS "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             print("Found third party directory as super root")
-            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty" CACHE STRING "Default ThirdParty Library")
+            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/../thirdparty" CACHE STRING "Default ThirdParty Library")
         else()
             message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
+            message(WARNING "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             # Define GitHub repository information
             set(GITHUB_REPO "GeniusVentures/thirdparty")
 
@@ -186,9 +173,8 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
                 set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
                 set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
             endif()
-            message(WARNING "URL IS ${THIRDPARTY_RELEASE_URL}")
             set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
-            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
+            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/../thirdparty")
             # Download the latest release
             execute_process(
                 COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
