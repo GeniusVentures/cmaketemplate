@@ -43,6 +43,15 @@ endif()
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "The default build type")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_CXX_FLAGS}" CACHE STRING "default CXX_Flags")
 
+option(SGNS_ENABLE_RELEASE_SYMBOLS "Build Release with debug symbols for symbolication" ON)
+
+if(SGNS_ENABLE_RELEASE_SYMBOLS AND CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang|GNU)$")
+    add_compile_options(
+        "$<$<CONFIG:Release>:-gline-tables-only>"
+        "$<$<CONFIG:RelWithDebInfo>:-g>"
+    )
+endif()
+
 if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
