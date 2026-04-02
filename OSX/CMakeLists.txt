@@ -24,7 +24,7 @@ set(CMAKE_MACOSX_RPATH 1 CACHE BOOL
 
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
-include(../CommonCompilerOptions.CMake)
+include(../CommonCompilerOptions.cmake)
 
 set(EXTRA_CXX_FLAGS "" CACHE STRING "")
 

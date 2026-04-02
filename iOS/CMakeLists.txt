@@ -26,6 +26,6 @@ set(BUILD_EXAMPLES OFF)
 
 set(BUILD_TESTING OFF)
 
-include(../CommonCompilerOptions.CMake)
+include(../CommonCompilerOptions.cmake)
 
 include(../CommonBuildParameters.cmake)
