@@ -28,7 +28,5 @@ include(../CommonCompilerOptions.cmake)
 
 set(EXTRA_CXX_FLAGS "" CACHE STRING "")
 
-set(TESTING ON CACHE BOOL "Build tests")
-
 # Include common build parameters
 include(../CommonBuildParameters.cmake)

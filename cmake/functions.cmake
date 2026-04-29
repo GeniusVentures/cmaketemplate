@@ -211,7 +211,25 @@ function(get_super_root RESULT_VAR)
         return()
     endif()
 
-    # Find the nearest repo containing the current source directory
+  # Find the nearest repo containing the current source directory
+  execute_process(
+          COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          OUTPUT_VARIABLE current_root
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+          RESULT_VARIABLE result
+          ERROR_QUIET
+  )
+
+  if(NOT result EQUAL 0 OR "${current_root}" STREQUAL "")
+    set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}/../" PARENT_SCOPE)
+    message(WARNING "Not inside a git repo, using current source dir ../")
+    return()
+  endif()
+
+  file(REAL_PATH "${current_root}" current_root)
+
+  while(TRUE)
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

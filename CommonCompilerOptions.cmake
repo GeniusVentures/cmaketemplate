@@ -1,3 +1,19 @@
+# BOOST VERSION TO USE
+set(BOOST_MAJOR_VERSION "1" CACHE STRING "Boost Major Version")
+set(BOOST_MINOR_VERSION "85" CACHE STRING "Boost Minor Version")
+set(BOOST_PATCH_VERSION "0" CACHE STRING "Boost Patch Version")
+
+# convenience settings
+set(BOOST_VERSION "${BOOST_MAJOR_VERSION}.${BOOST_MINOR_VERSION}.${BOOST_PATCH_VERSION}")
+set(BOOST_VERSION_3U "${BOOST_MAJOR_VERSION}_${BOOST_MINOR_VERSION}_${BOOST_PATCH_VERSION}")
+set(BOOST_VERSION_2U "${BOOST_MAJOR_VERSION}_${BOOST_MINOR_VERSION}")
+
+# --------------------------------------------------------
+# Set config of GTest
+set(BUILD_TESTING "ON" CACHE BOOL "Build tests")
+
+add_definitions(-D_USE_INSTALLED_BOOST_JSON_=TRUE)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_C_STANDARD 17)
@@ -28,21 +44,19 @@ include(GNUInstallDirs)
 set(CPACK_PACKAGE_VENDOR "Genius Ventures" CACHE STRING "The Package Vendor default")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME})
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "")
+# these default options can be overridden by the user, but we want them on by default since most of our projects have tests and examples
+option(BUILD_TESTING "Build Tests" ON)
+option(BUILD_EXAMPLES "Build Examples" ON)
 
+include(GNUInstallDirs)
 include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
 include(CheckCXXCompilerFlag)
-
+include(ExternalProject)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/functions.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/install.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/definition.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CompilationFlags.cmake)
-
-if(WIN32)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0A00 -DNOMINMAX")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x0A00 -DNOMINMAX")
-endif()
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/cmake/compile_option_by_platform/${CMAKE_SYSTEM_NAME}.cmake")
     print("add compile option: ${CMAKE_CURRENT_LIST_DIR}/cmake/compile_option_by_platform/${CMAKE_SYSTEM_NAME}.cmake")
@@ -58,24 +72,25 @@ endif()
 get_super_root(PROJECT_SUPER_ROOT)
 if (NOT DEFINED PROJECT_ROOT_NAME)
     # Get absolute path
-    cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}../../")
+    cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
 print("Project root is ${PROJECT_ROOT_NAME}")
+print("Project super root is ${PROJECT_SUPER_ROOT}")
 
 if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    if(EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    if(EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to same as build type")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
     elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to release as a fallback")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
@@ -138,12 +153,12 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     # define third party directory
     if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+        if(EXISTS "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             print("Found third party directory as super root")
-            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/../thirdparty" CACHE STRING "Default ThirdParty Library")
+            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty" CACHE STRING "Default ThirdParty Library")
         else()
             message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
-            message(WARNING "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+            message(WARNING "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             # Define GitHub repository information
             set(GITHUB_REPO "GeniusVentures/thirdparty")
 
@@ -181,7 +196,7 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
                 set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
             endif()
             set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
-            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/../thirdparty")
+            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
             # Download the latest release
             execute_process(
                 COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
@@ -196,14 +211,14 @@ if(NOT DEFINED THIRDPARTY_BUILD_DIR)
             # Extract the archive to the correct location
             execute_process(
                 COMMAND ${CMAKE_COMMAND} -E tar xzf ${THIRDPARTY_ARCHIVE}
-                WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../../thirdparty
+                WORKING_DIRECTORY ${THIRDPARTY_EXTRACT_DIR}
                 RESULT_VARIABLE EXTRACT_RESULT
             )
 
             if(NOT EXTRACT_RESULT EQUAL 0)
                 message(FATAL_ERROR "Failed to extract thirdparty archive")
             endif()
-            set(THIRDPARTY_DIR "${CMAKE_CURRENT_LIST_DIR}/../../thirdparty" CACHE STRING "Default ThirdParty Library")
+            set(THIRDPARTY_DIR "${THIRDPARTY_EXTRACT_DIR}" CACHE STRING "Default ThirdParty Library")
         endif()
     endif()
     print("Setting third party build directory default")
@@ -225,3 +240,21 @@ endif()
 
 set(TESTING ON CACHE BOOL "Build Tests Flag")
 set(BUILD_EXAMPLES ON CACHE BOOL "Build Examples Flag")
+
+# zlib is here to appear before boost in the dependency graph, as some boost libraries depend on it. We need to build it first to be able to link it statically in boost and avoid issues with shared library loading on some platforms.
+ExternalProject_Add(zlib
+        PREFIX zlib
+        SOURCE_DIR "${THIRDPARTY_DIR}/zlib"
+        CMAKE_CACHE_ARGS
+        ${_CMAKE_COMMON_CACHE_ARGS}
+        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        -DPLATFORM:STRING=${PLATFORM}
+        -DZLIB_BUILD_TESTING:BOOL=OFF
+        -DZLIB_BUILD_EXAMPLES:BOOL=OFF
+        -DZLIB_BUILD_SHARED:BOOL=OFF
+        -Dzlib_DIR:PATH=${zlib_DIR}
+        -DZLIB_FIND_COMPONENTS:STRING=static
+)
+ExternalProject_Get_Property(zlib INSTALL_DIR)
+set(zlib_DIR "${_THIRDPARTY_BUILD_DIR}/zlib/lib/cmake/zlib")
+set(ZLIB_FIND_COMPONENTS "static")
