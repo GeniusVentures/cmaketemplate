@@ -266,4 +266,6 @@ function(get_super_root RESULT_VAR)
 
     set(${RESULT_VAR} "${current_root}" PARENT_SCOPE)
     message(STATUS "Found top-level project root: ${current_root}")
+    break()
+  endwhile()
 endfunction()
