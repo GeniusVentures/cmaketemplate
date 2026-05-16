@@ -229,7 +229,6 @@ function(get_super_root RESULT_VAR)
 
   file(REAL_PATH "${current_root}" current_root)
 
-  while(TRUE)
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
