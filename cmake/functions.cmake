@@ -73,15 +73,15 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
     set(GEN_COMMAND ${Protobuf_PROTOC_EXECUTABLE})
     set(GEN_ARGS ${Protobuf_INCLUDE_DIR})
 
-    add_custom_command(
-        OUTPUT ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB}
-        COMMAND ${GEN_COMMAND}
-        ARGS -I${PROJECT_ROOT}/src -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS protobuf::protoc
-        VERBATIM
-    )
-
+  add_custom_command(
+          OUTPUT ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB}
+          COMMAND ${GEN_COMMAND}
+          ARGS -I${PROJECT_ROOT}/src -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
+          WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+          DEPENDS ${PROTO_ABS} protobuf::protoc
+          VERBATIM
+  )
+    
     set(${PB_H} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} PARENT_SCOPE)
     set(${PB_CC} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB} PARENT_SCOPE)
     set(${PB_REL_PATH} ${SCHEMA_REL} PARENT_SCOPE)
