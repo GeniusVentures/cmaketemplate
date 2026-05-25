@@ -25,16 +25,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "")
 
-if (DEFINED SANITIZE_CODE)
+if(DEFINED SANITIZE_CODE)
     message(STATUS "Building with sanitizer: ${SANITIZE_CODE}")
-    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${SANITIZE_CODE}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${SANITIZE_CODE}")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${SANITIZE_CODE}")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${SANITIZE_CODE}")
         add_compile_options("-fsanitize=${SANITIZE_CODE}")
         add_link_options("-fsanitize=${SANITIZE_CODE}")
-    elseif (MSVC)
+    elseif(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=${SANITIZE_CODE}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=${SANITIZE_CODE}")
         add_compile_options("/fsanitize=${SANITIZE_CODE}")
@@ -72,7 +72,7 @@ if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
 get_super_root(PROJECT_SUPER_ROOT)
-if (NOT DEFINED PROJECT_ROOT_NAME)
+if(NOT DEFINED PROJECT_ROOT_NAME)
     # Get absolute path
     cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
@@ -82,10 +82,10 @@ print("Project super root is ${PROJECT_SUPER_ROOT}")
 
 if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    if(EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    if(EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to same as build type")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
@@ -123,8 +123,8 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
 
         # Download the latest release
         execute_process(
-                COMMAND curl -L -o ${ZKLLVM_ARCHIVE} ${ZKLLVM_RELEASE_URL}
-                RESULT_VARIABLE DOWNLOAD_RESULT
+            COMMAND curl -L -o ${ZKLLVM_ARCHIVE} ${ZKLLVM_RELEASE_URL}
+            RESULT_VARIABLE DOWNLOAD_RESULT
         )
 
         if(NOT DOWNLOAD_RESULT EQUAL 0)
@@ -134,9 +134,9 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
         file(MAKE_DIRECTORY ${ZKLLVM_EXTRACT_DIR})
         # Extract the archive to the correct location
         execute_process(
-                COMMAND ${CMAKE_COMMAND} -E tar xzf ${ZKLLVM_ARCHIVE}
-                WORKING_DIRECTORY ${PROJECT_SUPER_ROOT}/zkLLVM/
-                RESULT_VARIABLE EXTRACT_RESULT
+            COMMAND ${CMAKE_COMMAND} -E tar xzf ${ZKLLVM_ARCHIVE}
+            WORKING_DIRECTORY ${PROJECT_SUPER_ROOT}/zkLLVM/
+            RESULT_VARIABLE EXTRACT_RESULT
         )
 
         if(NOT EXTRACT_RESULT EQUAL 0)
@@ -150,17 +150,17 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
         message(STATUS "zkLLVM downloaded and extracted to ${ZKLLVM_BUILD_DIR}")
     endif()
 endif()
+print("Using zkLLVM at ${ZKLLVM_BUILD_DIR}")
 
 if(NOT DEFINED THIRDPARTY_BUILD_DIR)
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
     # define third party directory
     if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+        if(EXISTS "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
             print("Found third party directory as super root")
-            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty" CACHE STRING "Default ThirdParty Library")
+            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/../thirdparty" CACHE STRING "Default ThirdParty Library")
         else()
-            message(STATUS "Cannot find thirdparty directory required to build, will attempt to obtain from releases")
-            message(WARNING "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+            message("Cannot find thirdparty directory required to build, will attempt to obtain from releases")
             # Define GitHub repository information
             set(GITHUB_REPO "GeniusVentures/thirdparty")
 
