@@ -257,6 +257,8 @@ function(get_super_root RESULT_VAR)
         )
 
         if(NOT result EQUAL 0 OR "${super_root}" STREQUAL "")
+            # If there is no superproject, assume the top-level root is ../
+            file(REAL_PATH "${current_root}/../" current_root)
             break()
         endif()
 
