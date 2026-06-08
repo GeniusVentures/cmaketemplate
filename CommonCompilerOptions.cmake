@@ -71,25 +71,29 @@ if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-get_super_root(PROJECT_SUPER_ROOT)
+if (NOT DEFINED THIRDPARTY_DIR)
+    get_third_party_dir(THIRDPARTY_DIR)
+endif()
+get_filename_component(PROJECT_SUPER_ROOT "${THIRDPARTY_DIR}/../" ABSOLUTE)
 if(NOT DEFINED PROJECT_ROOT_NAME)
     # Get absolute path
     cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
 print("Project root is ${PROJECT_ROOT_NAME}")
+print("thirdparty root is ${THIRDPARTY_DIR}")
 print("Project super root is ${PROJECT_SUPER_ROOT}")
 
 if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
     get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    if(EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    if(EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to same as build type")
 
-        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
+        set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
 
         # Get absolute path
         cmake_path(SET ZKLLVM_BUILD_DIR NORMALIZE "${ZKLLVM_BUILD_DIR}")
-    elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/../zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
+    elseif((NOT WIN32 OR "${CMAKE_BUILD_TYPE}" STREQUAL "Release") AND EXISTS "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}")
         message(STATUS "Setting default zkLLVM directory to release as a fallback")
 
         set(ZKLLVM_BUILD_DIR "${PROJECT_SUPER_ROOT}/zkLLVM/build/${BUILD_PLATFORM_NAME}/Release${ABI_SUBFOLDER_NAME}" CACHE STRING "Default zkLLVM Library")
@@ -152,81 +156,72 @@ if(NOT DEFINED ZKLLVM_BUILD_DIR AND NOT ${PROJECT_ROOT_NAME} STREQUAL "zkLLVM")
 endif()
 print("Using zkLLVM at ${ZKLLVM_BUILD_DIR}")
 
-if(NOT DEFINED THIRDPARTY_BUILD_DIR)
-    get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    # define third party directory
-    if(NOT DEFINED THIRDPARTY_DIR)
-        if(EXISTS "${PROJECT_SUPER_ROOT}/../thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
-            print("Found third party directory as super root")
-            set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/../thirdparty" CACHE STRING "Default ThirdParty Library")
+get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+if(EXISTS "${PROJECT_SUPER_ROOT}/thirdparty/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}")
+    print("Found third party directory under super root")
+else()
+    message("Cannot find thirdparty directory required to build, will attempt to obtain from releases")
+    # Define GitHub repository information
+    set(GITHUB_REPO "GeniusVentures/thirdparty")
+
+    # Define the target branch
+    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+    if(ANDROID)
+        set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-develop-${CMAKE_BUILD_TYPE}")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+        set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-develop-${CMAKE_BUILD_TYPE}")
+    endif()
+    if(DEFINED GENIUS_DEPENDENCY_BRANCH)
+        set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
+        if(ANDROID)
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
         else()
-            message("Cannot find thirdparty directory required to build, will attempt to obtain from releases")
-            # Define GitHub repository information
-            set(GITHUB_REPO "GeniusVentures/thirdparty")
-
-            # Define the target branch
-            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
-            if(ANDROID)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-develop-${CMAKE_BUILD_TYPE}")
-            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-develop-${CMAKE_BUILD_TYPE}")
-            endif()
-            if(DEFINED GENIUS_DEPENDENCY_BRANCH)
-                set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-develop-${CMAKE_BUILD_TYPE}")
-                if(ANDROID)
-                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-                elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND DEFINED ARCH)
-                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${ARCH}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-                else()
-                    set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
-                endif()
-            endif()
-
-            set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
-            if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG)
-                set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
-            endif()
-            # Construct the release download URL
-            if(ANDROID)
-                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${CMAKE_BUILD_TYPE}.tar.gz")
-                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/$TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
-            elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-${CMAKE_BUILD_TYPE}.tar.gz")
-                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
-            else()
-                set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
-                set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
-            endif()
-            set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
-            set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
-            # Download the latest release
-            execute_process(
-                COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
-                RESULT_VARIABLE DOWNLOAD_RESULT
-            )
-
-            if(NOT DOWNLOAD_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to download thirdparty archive from ${THIRDPARTY_RELEASE_URL}")
-            endif()
-
-            file(MAKE_DIRECTORY ${THIRDPARTY_EXTRACT_DIR})
-            # Extract the archive to the correct location
-            execute_process(
-                COMMAND ${CMAKE_COMMAND} -E tar xzf ${THIRDPARTY_ARCHIVE}
-                WORKING_DIRECTORY ${THIRDPARTY_EXTRACT_DIR}
-                RESULT_VARIABLE EXTRACT_RESULT
-            )
-
-            if(NOT EXTRACT_RESULT EQUAL 0)
-                message(FATAL_ERROR "Failed to extract thirdparty archive")
-            endif()
-            set(THIRDPARTY_DIR "${THIRDPARTY_EXTRACT_DIR}" CACHE STRING "Default ThirdParty Library")
+            set(TARGET_BRANCH "${BUILD_PLATFORM_NAME}-${GENIUS_DEPENDENCY_BRANCH}-${CMAKE_BUILD_TYPE}")
         endif()
     endif()
-    print("Setting third party build directory default")
-    get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-    set(THIRDPARTY_BUILD_DIR "${THIRDPARTY_DIR}/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default Third Party Build Directory")
+
+    set(GITHUB_BASE_URL "https://github.com/${GITHUB_REPO}/releases/download")
+    if(DEFINED BRANCH_IS_TAG AND BRANCH_IS_TAG)
+        set(TARGET_BRANCH ${GENIUS_DEPENDENCY_BRANCH})
+    endif()
+    # Construct the release download URL
+    if(ANDROID)
+        set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ANDROID_ABI}-${CMAKE_BUILD_TYPE}.tar.gz")
+        set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/$TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${ARCH}-${CMAKE_BUILD_TYPE}.tar.gz")
+        set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+    else()
+        set(THIRDPARTY_ARCHIVE_NAME "${BUILD_PLATFORM_NAME}-${CMAKE_BUILD_TYPE}.tar.gz")
+        set(THIRDPARTY_RELEASE_URL "${GITHUB_BASE_URL}/${TARGET_BRANCH}/${THIRDPARTY_ARCHIVE_NAME}")
+    endif()
+    set(THIRDPARTY_ARCHIVE "${CMAKE_BINARY_DIR}/thirdparty-${THIRDPARTY_ARCHIVE_NAME}")
+    set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
+    # Download the latest release
+    execute_process(
+        COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
+        RESULT_VARIABLE DOWNLOAD_RESULT
+    )
+
+    if(NOT DOWNLOAD_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to download thirdparty archive from ${THIRDPARTY_RELEASE_URL}")
+    endif()
+
+    # Extract the archive to the correct location
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xzf ${THIRDPARTY_ARCHIVE}
+        WORKING_DIRECTORY ${THIRDPARTY_EXTRACT_DIR}
+        RESULT_VARIABLE EXTRACT_RESULT
+    )
+
+    if(NOT EXTRACT_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to extract thirdparty archive")
+    endif()
 endif()
+get_filename_component(BUILD_PLATFORM_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set(THIRDPARTY_BUILD_DIR "${THIRDPARTY_DIR}/build/${BUILD_PLATFORM_NAME}/${CMAKE_BUILD_TYPE}${ABI_SUBFOLDER_NAME}" CACHE STRING "Default Third Party Build Directory")
 
 set(_THIRDPARTY_BUILD_DIR "${THIRDPARTY_BUILD_DIR}" CACHE STRING "Local ThirdParty Build Directory")
 print("THIRDPARTY BUILD DIR: ${_THIRDPARTY_BUILD_DIR}")

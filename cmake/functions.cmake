@@ -200,71 +200,56 @@ function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
     ENDIF()
 endfunction()
 
-# Finds the super root directory of the current Git repository (works inside nested submodules)
-# returns the top level project that has this as a submodule
-# Simple function to get the immediate superproject root (when this is a git submodule)
-function(get_super_root RESULT_VAR)
-    find_package(Git QUIET)
-    if(NOT GIT_FOUND)
-        set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
-        message(WARNING "Git not found, using current source dir")
-        return()
-    endif()
+# Finds the thirdparty subdirectory.  Walks up until it locates
+#   <root>/../thirdparty  with the GeniusVentures/thirdparty git remote.
+# If thirdparty is not on disk, falls back to the parent of the
+# current git repository (repo-root/../) — enough to let the build
+# proceed to the point where it can download thirdparty itself.
+function(get_third_party_dir RESULT_VAR)
+    find_package(Git REQUIRED)
 
-  # Find the nearest repo containing the current source directory
-  execute_process(
-          COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
-          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-          OUTPUT_VARIABLE current_root
-          OUTPUT_STRIP_TRAILING_WHITESPACE
-          RESULT_VARIABLE result
-          ERROR_QUIET
-  )
-
-  if(NOT result EQUAL 0 OR "${current_root}" STREQUAL "")
-    set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}/../" PARENT_SCOPE)
-    message(WARNING "Not inside a git repo, using current source dir ../")
-    return()
-  endif()
-
-  file(REAL_PATH "${current_root}" current_root)
-
+    # ── Resolve the current git repo root (for fallback) ──────────
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        OUTPUT_VARIABLE current_root
+        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+        OUTPUT_VARIABLE _repo_root
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE result
+        RESULT_VARIABLE _repo_result
         ERROR_QUIET
     )
-
-    if(NOT result EQUAL 0 OR "${current_root}" STREQUAL "")
-        set(${RESULT_VAR} "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
-        message(WARNING "Not inside a git repo, using current source dir")
-        return()
+    if(_repo_result EQUAL 0 AND NOT "${_repo_root}" STREQUAL "")
+        file(REAL_PATH "${_repo_root}/../" _fallback)
+    else()
+        file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/../" _fallback)
     endif()
 
-    file(REAL_PATH "${current_root}" current_root)
+    # ── Walk up looking for the canonical thirdparty ──────────────
+    cmake_path(SET _current "${CMAKE_CURRENT_LIST_DIR}" NORMALIZE)
 
     while(TRUE)
-        execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse --show-superproject-working-tree
-            WORKING_DIRECTORY "${current_root}"
-            OUTPUT_VARIABLE super_root
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            RESULT_VARIABLE result
-            ERROR_QUIET
-        )
-
-        if(NOT result EQUAL 0 OR "${super_root}" STREQUAL "")
-            # If there is no superproject, assume the top-level root is ../
-            file(REAL_PATH "${current_root}/../" current_root)
-            break()
+        cmake_path(SET _candidate "${_current}/../thirdparty" NORMALIZE)
+        if(EXISTS "${_candidate}" AND IS_DIRECTORY "${_candidate}")
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" -C "${_candidate}" remote get-url origin
+                OUTPUT_VARIABLE _remote
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE _result
+                ERROR_QUIET
+            )
+            if(_result EQUAL 0 AND _remote MATCHES "GeniusVentures/thirdparty")
+                set(${RESULT_VAR} "${_candidate}" PARENT_SCOPE)
+                message(STATUS "Found thirdparty: ${_candidate}")
+                return()
+            endif()
         endif()
 
-        file(REAL_PATH "${super_root}" current_root)
+        cmake_path(SET _current "${_current}/../" NORMALIZE)
+        if("${_current}" STREQUAL "/")
+            # Thirdparty not found — use fallback so the build can
+            # still configure (it may download thirdparty itself).
+            message(WARNING "Thirdparty directory not found, using fallback: ${_fallback}")
+            set(${RESULT_VAR} "${_fallback}" PARENT_SCOPE)
+            return()
+        endif()
     endwhile()
-
-    set(${RESULT_VAR} "${current_root}" PARENT_SCOPE)
-    message(STATUS "Found top-level project root: ${current_root}")
 endfunction()
