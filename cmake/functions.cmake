@@ -243,11 +243,14 @@ function(get_third_party_dir RESULT_VAR)
             endif()
         endif()
 
+        cmake_path(SET _prev "${_current}")
         cmake_path(SET _current "${_current}/../" NORMALIZE)
-        if("${_current}" STREQUAL "/")
-            # Thirdparty not found — use fallback so the build can
-            # still configure (it may download thirdparty itself).
-            message(WARNING "Thirdparty directory not found, using fallback: ${_fallback}")
+        if("${_current}" STREQUAL "${_prev}")
+            # Reached the filesystem root — can't go any higher.
+            # On Unix the root normalises to "/"; on Windows repeated
+            # "../" on e.g. "C:/" stays at "C:/", so we detect the
+            # stall instead of looping forever.
+            message(WARNING "Thirdparty directory not found (reached filesystem root), using fallback: ${_fallback}")
             set(${RESULT_VAR} "${_fallback}" PARENT_SCOPE)
             return()
         endif()
