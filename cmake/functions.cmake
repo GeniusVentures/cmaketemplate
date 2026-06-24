@@ -161,43 +161,45 @@ endfunction()
 
 
 function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
+    if(MSVC)
+        foreach(arg ${ARGN})
+            target_link_options(${target} PRIVATE
+                "LINKER:/WHOLEARCHIVE:$<TARGET_FILE:${arg}>"
             )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+        endforeach()
+    elseif(APPLE)
+        foreach(arg ${ARGN})
+            target_link_options(${target} PRIVATE
+                "LINKER:-force_load,$<TARGET_FILE:${arg}>"
+            )
+        endforeach()
+    else()
+        target_link_libraries(${target}
+            "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
+        )
+    endif()
+    target_link_libraries(${target} ${ARGN})
 endfunction()
 
 function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} PUBLIC ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
+    if(MSVC)
+        foreach(arg ${ARGN})
+            target_link_options(${target} PUBLIC
+                "LINKER:/WHOLEARCHIVE:$<TARGET_FILE:${arg}>"
             )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} PUBLIC ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+        endforeach()
+    elseif(APPLE)
+        foreach(arg ${ARGN})
+            target_link_options(${target} PUBLIC
+                "LINKER:-force_load,$<TARGET_FILE:${arg}>"
+            )
+        endforeach()
+    else()
+        target_link_libraries(${target} PUBLIC
+            "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
+        )
+    endif()
+    target_link_libraries(${target} PUBLIC ${ARGN})
 endfunction()
 
 # Finds the thirdparty subdirectory.  Walks up until it locates
