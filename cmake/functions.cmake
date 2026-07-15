@@ -61,14 +61,15 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
     endif()
 
     get_filename_component(PROTO_ABS "${PROTO}" REALPATH)
+    get_filename_component(PROTO_NAME "${PROTO}" NAME_WE)
 
     # get relative (to CMAKE_BINARY_DIR) path of current proto file
     file(RELATIVE_PATH SCHEMA_REL "${CMAKE_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}")
     set(SCHEMA_OUT_DIR ${CMAKE_BINARY_DIR}/generated)
     file(MAKE_DIRECTORY ${SCHEMA_OUT_DIR})
 
-    string(REGEX REPLACE "\\.proto$" ".pb.h" GEN_PB_HEADER ${PROTO})
-    string(REGEX REPLACE "\\.proto$" ".pb.cc" GEN_PB ${PROTO})
+    set(GEN_PB_HEADER "${PROTO_NAME}.pb.h")
+    set(GEN_PB "${PROTO_NAME}.pb.cc")
 
     set(GEN_COMMAND ${Protobuf_PROTOC_EXECUTABLE})
     set(GEN_ARGS ${Protobuf_INCLUDE_DIR})
