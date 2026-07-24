@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.22)
 include(../cmake/functions.cmake)
 get_default_root()
 
+# Whole-archive linking style for cmake/functions.cmake (_whole_archive_link)
+set(WHOLE_ARCHIVE_STYLE "FORCE_LOAD")
+set(WHOLE_ARCHIVE_OPTION "LINKER:-force_load,")
+
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(NAMED_LANGUAGE_SUPPORT On CACHE BOOL "Toolchain named language support parameter")
     set(ENABLE_BITCODE OFF CACHE BOOL "Toolchain bitcode enable parameter")

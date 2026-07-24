@@ -30,6 +30,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
 include(../cmake/functions.cmake)
 get_default_root()
 
+# Whole-archive linking style for cmake/functions.cmake (_whole_archive_link)
+set(WHOLE_ARCHIVE_STYLE "WRAP")
+
 # Project
 if(NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")

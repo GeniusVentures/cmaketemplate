@@ -160,46 +160,30 @@ function(get_default_root)
 endfunction()
 
 
-function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
-    if(MSVC)
+# Platform whole-archive settings are configured per-OS in build/<OS>/CMakeLists.txt:
+#   WHOLE_ARCHIVE_STYLE   — FORCE_LOAD (per-lib link option) or WRAP (linker flags around libs)
+#   WHOLE_ARCHIVE_OPTION  — LINKER: prefix for the FORCE_LOAD style
+function(_whole_archive_link target visibility)
+    if(WHOLE_ARCHIVE_STYLE STREQUAL "FORCE_LOAD")
         foreach(arg ${ARGN})
-            target_link_options(${target} PRIVATE
-                "LINKER:/WHOLEARCHIVE:$<TARGET_FILE:${arg}>"
-            )
-        endforeach()
-    elseif(APPLE)
-        foreach(arg ${ARGN})
-            target_link_options(${target} PRIVATE
-                "LINKER:-force_load,$<TARGET_FILE:${arg}>"
+            target_link_options(${target} ${visibility}
+                "${WHOLE_ARCHIVE_OPTION}$<TARGET_FILE:${arg}>"
             )
         endforeach()
     else()
-        target_link_libraries(${target}
+        target_link_libraries(${target} ${visibility}
             "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
         )
     endif()
-    target_link_libraries(${target} ${ARGN})
+    target_link_libraries(${target} ${visibility} ${ARGN})
+endfunction()
+
+function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
+    _whole_archive_link(${target} PRIVATE ${ARGN})
 endfunction()
 
 function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
-    if(MSVC)
-        foreach(arg ${ARGN})
-            target_link_options(${target} PUBLIC
-                "LINKER:/WHOLEARCHIVE:$<TARGET_FILE:${arg}>"
-            )
-        endforeach()
-    elseif(APPLE)
-        foreach(arg ${ARGN})
-            target_link_options(${target} PUBLIC
-                "LINKER:-force_load,$<TARGET_FILE:${arg}>"
-            )
-        endforeach()
-    else()
-        target_link_libraries(${target} PUBLIC
-            "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
-        )
-    endif()
-    target_link_libraries(${target} PUBLIC ${ARGN})
+    _whole_archive_link(${target} PUBLIC ${ARGN})
 endfunction()
 
 # Finds the thirdparty subdirectory.  Walks up until it locates
