@@ -49,7 +49,12 @@ function(addtest_mock test_name)
     disable_clang_tidy(${test_name})
 endfunction()
 
-function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
+# compile_proto_to_cpp(PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Required: there is no PROJECT_ROOT fallback because a
+#   submodule built via add_subdirectory() has PROJECT_ROOT pointing at the
+#   parent repo, not its own src tree.
+function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
     get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(Protobuf_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION)
 
@@ -76,7 +81,7 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
   add_custom_command(
           OUTPUT ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB}
           COMMAND ${GEN_COMMAND}
-          ARGS -I${PROJECT_ROOT}/src -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
+          ARGS -I${PROTO_SRC_ROOT} -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
           DEPENDS ${PROTO_ABS} protobuf::protoc
           VERBATIM
@@ -93,12 +98,15 @@ if(NOT TARGET generated)
     )
 endif()
 
-function(add_proto_library NAME)
+# add_proto_library(NAME PROTO_SRC_ROOT proto1.proto [proto2.proto ...])
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Forwarded to compile_proto_to_cpp. Required — no default.
+function(add_proto_library NAME PROTO_SRC_ROOT)
     set(SOURCES "")
     set(HEADERS "")
     set(PB_REL_PATH "")
     foreach(PROTO IN ITEMS ${ARGN})
-        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO})
+        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO_SRC_ROOT} ${PROTO})
         list(APPEND SOURCES ${H} ${C})
         list(APPEND HEADERS ${H})
     endforeach()
