@@ -45,8 +45,6 @@ set(BUILD_EXAMPLES OFF)
 
 set(ABI_SUBFOLDER_NAME "/${ANDROID_ABI}" CACHE STRING "ABI subfolder")
 
-set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
-
 set(BUILD_TESTING OFF)
 
 set(TESTING OFF)
@@ -60,5 +58,11 @@ set_target_properties(android::android PROPERTIES IMPORTED_LIBNAME "android")
 SET(USE_BOOST_INCLUDE_POSTFIX ON)
 
 include(../CommonCompilerOptions.cmake)
+
+# Set host system protoc executable path — MUST follow the
+# CommonCompilerOptions include: that is what defines _THIRDPARTY_BUILD_DIR.
+# Setting it earlier expands an empty prefix into "/protobuf_host/bin/protoc",
+# which clobbers any -DPROTOC_EXECUTABLE (a normal set() shadows the cache).
+set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
 
 include(../CommonBuildParameters.cmake)
