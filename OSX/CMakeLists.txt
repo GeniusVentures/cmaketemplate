@@ -32,5 +32,15 @@ include(../CommonCompilerOptions.cmake)
 
 set(EXTRA_CXX_FLAGS "" CACHE STRING "")
 
+# where to get vulkan from
+set(Vulkan_INCLUDE_DIR "${THIRDPARTY_BUILD_DIR}/moltenvk/build/include")
+set(Vulkan_LIBRARY "${THIRDPARTY_BUILD_DIR}/moltenvk/build/lib/MoltenVK.xcframework")
+# where to put supporting shared libraries
+set(APP_RUNTIME_LIB_DIR "lib")
+set(APP_LINK_OPTIONS "LINKER:-no_warn_duplicate_libraries")
+set(APP_LINK_LIBRARIES "")
+set(APP_RPATH_EXE "@executable_path/../${APP_RUNTIME_LIB_DIR}")
+set(APP_RPATH_LIB "@loader_path")
+
 # Include common build parameters
 include(../CommonBuildParameters.cmake)

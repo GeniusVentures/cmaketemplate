@@ -21,4 +21,11 @@ set(USER_ENV_LIBRARY userenv)
 set(WIN_SOCK_LIBRARY wsock32 ws2_32)
 set(WIN_CRYPT_LIBRARY crypt32)
 
+# where to add shared libraries for and executable package
+set(APP_RUNTIME_LIB_DIR "bin")
+set(APP_LINK_OPTIONS "")
+set(APP_LINK_LIBRARIES "")
+set(APP_RPATH_EXE "")
+set(APP_RPATH_LIB "")
+
 include(../CommonBuildParameters.cmake)

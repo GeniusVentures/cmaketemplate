@@ -61,4 +61,17 @@ SET(USE_BOOST_INCLUDE_POSTFIX ON)
 
 include(../CommonCompilerOptions.cmake)
 
+# Set host system protoc executable path — MUST follow the
+# CommonCompilerOptions include: that is what defines _THIRDPARTY_BUILD_DIR.
+# Setting it earlier expands an empty prefix into "/protobuf_host/bin/protoc",
+# which clobbers any -DPROTOC_EXECUTABLE (a normal set() shadows the cache).
+set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+
+# where to add shared libraries for and executable package
+set(APP_RUNTIME_LIB_DIR "lib")
+set(APP_LINK_OPTIONS "")
+set(APP_LINK_LIBRARIES "")
+set(APP_RPATH_EXE "")
+set(APP_RPATH_LIB "")
+
 include(../CommonBuildParameters.cmake)

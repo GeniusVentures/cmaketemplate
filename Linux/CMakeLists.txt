@@ -41,5 +41,12 @@ include(../CommonCompilerOptions.cmake)
 # Set extra compiler flags
 set(EXTRA_CXX_FLAGS)
 
+# where to add shared libraries for and executable package
+set(APP_RUNTIME_LIB_DIR "lib")
+set(APP_LINK_OPTIONS "")
+set(APP_LINK_LIBRARIES "uuid")
+set(APP_RPATH_EXE "\$ORIGIN/../${APP_RUNTIME_LIB_DIR}")
+set(APP_RPATH_LIB "$ORIGIN")
+
 # Include common build parameters
 include(../CommonBuildParameters.cmake)
