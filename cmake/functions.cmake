@@ -67,8 +67,14 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
 
     get_filename_component(PROTO_ABS "${PROTO}" REALPATH)
 
-    # get relative (to CMAKE_BINARY_DIR) path of current proto file
-    file(RELATIVE_PATH SCHEMA_REL "${CMAKE_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}")
+    # Generated subpath mirrors protoc's own --cpp_out layout rule: the proto
+    # file's directory relative to PROTO_SRC_ROOT (the -I root it resolves
+    # against). Deriving from CMAKE_CURRENT_BINARY_DIR instead assumed the
+    # module's binary dir mirrors ${CMAKE_BINARY_DIR}/src/<rel>, which is false
+    # for add_subdirectory consumers (e.g. GNUS-NEO-SWARM nested in
+    # GeniusCognitiveSystem at ${CMAKE_BINARY_DIR}/GNUS-NEO-SWARM/src/...).
+    file(RELATIVE_PATH SCHEMA_REL "${PROTO_SRC_ROOT}" "${PROTO_ABS}")
+    get_filename_component(SCHEMA_REL "${SCHEMA_REL}" DIRECTORY)
     set(SCHEMA_OUT_DIR ${CMAKE_BINARY_DIR}/generated)
     file(MAKE_DIRECTORY ${SCHEMA_OUT_DIR})
 
