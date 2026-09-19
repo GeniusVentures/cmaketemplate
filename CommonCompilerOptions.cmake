@@ -41,6 +41,12 @@ if(DEFINED SANITIZE_CODE)
     endif()
 endif()
 
+# GNUInstallDirs resolves lib64 on RedHat-family 64-bit Linux (AlmaLinux 8)
+# but lib on Debian/Windows/macOS. Downstream consumers and the historical
+# release layout expect lib. Pin the install libdir so EL8 hosts produce
+# identical artifacts (no-op elsewhere, where GNUInstallDirs already
+# resolves lib).
+set(CMAKE_INSTALL_LIBDIR lib)
 include(GNUInstallDirs)
 
 set(CPACK_PACKAGE_VENDOR "Genius Ventures" CACHE STRING "The Package Vendor default")

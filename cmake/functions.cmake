@@ -49,7 +49,12 @@ function(addtest_mock test_name)
     disable_clang_tidy(${test_name})
 endfunction()
 
-function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
+# compile_proto_to_cpp(PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Required: there is no PROJECT_ROOT fallback because a
+#   submodule built via add_subdirectory() has PROJECT_ROOT pointing at the
+#   parent repo, not its own src tree.
+function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
     get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(Protobuf_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION)
 
@@ -62,8 +67,14 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
 
     get_filename_component(PROTO_ABS "${PROTO}" REALPATH)
 
-    # get relative (to CMAKE_BINARY_DIR) path of current proto file
-    file(RELATIVE_PATH SCHEMA_REL "${CMAKE_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}")
+    # Generated subpath mirrors protoc's own --cpp_out layout rule: the proto
+    # file's directory relative to PROTO_SRC_ROOT (the -I root it resolves
+    # against). Deriving from CMAKE_CURRENT_BINARY_DIR instead assumed the
+    # module's binary dir mirrors ${CMAKE_BINARY_DIR}/src/<rel>, which is false
+    # for add_subdirectory consumers (e.g. GNUS-NEO-SWARM nested in
+    # GeniusCognitiveSystem at ${CMAKE_BINARY_DIR}/GNUS-NEO-SWARM/src/...).
+    file(RELATIVE_PATH SCHEMA_REL "${PROTO_SRC_ROOT}" "${PROTO_ABS}")
+    get_filename_component(SCHEMA_REL "${SCHEMA_REL}" DIRECTORY)
     set(SCHEMA_OUT_DIR ${CMAKE_BINARY_DIR}/generated)
     file(MAKE_DIRECTORY ${SCHEMA_OUT_DIR})
 
@@ -76,7 +87,7 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
   add_custom_command(
           OUTPUT ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB}
           COMMAND ${GEN_COMMAND}
-          ARGS -I${PROJECT_ROOT}/src -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
+          ARGS -I${PROTO_SRC_ROOT} -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
           DEPENDS ${PROTO_ABS} protobuf::protoc
           VERBATIM
@@ -93,12 +104,15 @@ if(NOT TARGET generated)
     )
 endif()
 
-function(add_proto_library NAME)
+# add_proto_library(NAME PROTO_SRC_ROOT proto1.proto [proto2.proto ...])
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Forwarded to compile_proto_to_cpp. Required — no default.
+function(add_proto_library NAME PROTO_SRC_ROOT)
     set(SOURCES "")
     set(HEADERS "")
     set(PB_REL_PATH "")
     foreach(PROTO IN ITEMS ${ARGN})
-        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO})
+        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO_SRC_ROOT} ${PROTO})
         list(APPEND SOURCES ${H} ${C})
         list(APPEND HEADERS ${H})
     endforeach()
@@ -160,44 +174,30 @@ function(get_default_root)
 endfunction()
 
 
-function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
+# Platform whole-archive settings are configured per-OS in build/<OS>/CMakeLists.txt:
+#   WHOLE_ARCHIVE_STYLE   — FORCE_LOAD (per-lib link option) or WRAP (linker flags around libs)
+#   WHOLE_ARCHIVE_OPTION  — LINKER: prefix for the FORCE_LOAD style
+function(_whole_archive_link target visibility)
+    if(WHOLE_ARCHIVE_STYLE STREQUAL "FORCE_LOAD")
+        foreach(arg ${ARGN})
+            target_link_options(${target} ${visibility}
+                "${WHOLE_ARCHIVE_OPTION}$<TARGET_FILE:${arg}>"
             )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+        endforeach()
+    else()
+        target_link_libraries(${target} ${visibility}
+            "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
+        )
+    endif()
+    target_link_libraries(${target} ${visibility} ${ARGN})
+endfunction()
+
+function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
+    _whole_archive_link(${target} PRIVATE ${ARGN})
 endfunction()
 
 function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} PUBLIC ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
-            )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} PUBLIC ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+    _whole_archive_link(${target} PUBLIC ${ARGN})
 endfunction()
 
 # Finds the thirdparty subdirectory.  Walks up until it locates

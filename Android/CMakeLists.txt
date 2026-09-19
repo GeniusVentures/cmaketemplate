@@ -30,6 +30,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
 include(../cmake/functions.cmake)
 get_default_root()
 
+# Whole-archive linking style for cmake/functions.cmake (_whole_archive_link)
+set(WHOLE_ARCHIVE_STYLE "WRAP")
+
 # Project
 if(NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
@@ -57,5 +60,18 @@ set_target_properties(android::android PROPERTIES IMPORTED_LIBNAME "android")
 SET(USE_BOOST_INCLUDE_POSTFIX ON)
 
 include(../CommonCompilerOptions.cmake)
+
+# Set host system protoc executable path — MUST follow the
+# CommonCompilerOptions include: that is what defines _THIRDPARTY_BUILD_DIR.
+# Setting it earlier expands an empty prefix into "/protobuf_host/bin/protoc",
+# which clobbers any -DPROTOC_EXECUTABLE (a normal set() shadows the cache).
+set(PROTOC_EXECUTABLE "${_THIRDPARTY_BUILD_DIR}/protobuf_host/bin/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+
+# where to add shared libraries for and executable package
+set(APP_RUNTIME_LIB_DIR "lib")
+set(APP_LINK_OPTIONS "")
+set(APP_LINK_LIBRARIES "")
+set(APP_RPATH_EXE "")
+set(APP_RPATH_LIB "")
 
 include(../CommonBuildParameters.cmake)
