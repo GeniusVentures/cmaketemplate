@@ -256,3 +256,19 @@ function(get_third_party_dir RESULT_VAR)
         endif()
     endwhile()
 endfunction()
+
+# Sets BUILD_TARGET_OS — the predefined platform being built
+# (OSX/Windows/Linux/iOS/Android). CMAKE_SYSTEM_NAME is the only divergent
+# name ("Darwin" for macOS), so the mapping lives here, once: consumers
+# derive the platform through this function instead of gating on
+# CMAKE_SYSTEM_NAME. CACHE (not PARENT_SCOPE) so the value is visible in any
+# scope the moment the function is called, regardless of include order
+# (per-platform fragments glob-included by the project's
+# cmake/platform.cmake read it in their own scope).
+function(define_build_target_os)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(BUILD_TARGET_OS "OSX" CACHE STRING "Target OS being built" FORCE)
+    else()
+        set(BUILD_TARGET_OS "${CMAKE_SYSTEM_NAME}" CACHE STRING "Target OS being built" FORCE)
+    endif()
+endfunction()
