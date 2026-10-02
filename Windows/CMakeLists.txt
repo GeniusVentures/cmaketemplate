@@ -13,6 +13,15 @@ endif()
 
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
+# Platform defines must come after project(): set before it they never reach
+# the compile commands (verified — 0/57 entries carried either define), so
+# boost pragma-warned "Please define _WIN32_WINNT" on every Windows TU.
+# 0x0601 = Windows 7, the same value boost assumes in that warning.
+if(WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0601)
+endif()
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
 include(../CommonCompilerOptions.cmake)
