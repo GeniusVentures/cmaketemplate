@@ -14,7 +14,7 @@ This repository provides a cross-platform CMake template structured to support b
 - **Windows/**
 - **iOS/**
 
-Each platform directory is intended to hold its respective build artifacts.
+Each platform directory is intended to hold its respective build artifacts, in per-build-type subdirectories (`Debug/`, `Release/`).
 
 ---
 
@@ -22,45 +22,47 @@ Each platform directory is intended to hold its respective build artifacts.
 
 ### Linux
 ```bash
-mkdir -p Linux/x86_64
-cd Linux/x86_64
-cmake ../.. -DCMAKE_BUILD_TYPE=Release
-make -j<threads>
+mkdir -p Linux/x86_64/Debug
+cd Linux/x86_64/Debug
+cmake ../.. -G Ninja -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 
 ### Android
 ```bash
-mkdir -p Android/armeabi-v7a
-cd Android/armeabi-v7a
-cmake ../../ -DANDROID_ABI="armeabi-v7a" \
+mkdir -p Android/armeabi-v7a/Debug
+cd Android/armeabi-v7a/Debug
+cmake ../../ -G Ninja -DANDROID_ABI="armeabi-v7a" \
     -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
     -DANDROID_TOOLCHAIN=clang \
-    -DCMAKE_BUILD_TYPE=Release
-make -j<threads>
+    -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 or
 ```bash
-mkdir -p Android/arm64-v8a
-cd Android/arm64-v8a
-cmake ../../ -DANDROID_ABI="arm64-v8a" \
+mkdir -p Android/arm64-v8a/Debug
+cd Android/arm64-v8a/Debug
+cmake ../../ -G Ninja -DANDROID_ABI="arm64-v8a" \
     -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
     -DANDROID_TOOLCHAIN=clang \
-    -DCMAKE_BUILD_TYPE=Release
-make -j<threads>
+    -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 
 ### macOS (OSX)
 ```bash
-cd OSX
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j<threads>
+mkdir -p OSX/Debug
+cd OSX/Debug
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 
 ### iOS
 ```bash
-cd iOS
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j<threads>
+mkdir -p iOS/Debug
+cd iOS/Debug
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 
 ### Windows
@@ -97,15 +99,16 @@ This will fetch artifacts from GitHub releases for `zkllvm` and `thirdparty`.
 ## Build Tools
 
 ### POSIX Platforms (Linux, Android, macOS, iOS)
-- Standard build:
-```bash
-make -j<threads>
-```
-
-- With **Ninja** (if installed):
+- Standard build (**Ninja**, as used above):
 ```bash
 cmake -G Ninja ..
-ninja -j<threads>
+ninja
+```
+
+- Without Ninja (Makefiles fallback):
+```bash
+cmake ..
+make -j<threads>
 ```
 
 ### Windows
