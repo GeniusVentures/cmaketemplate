@@ -94,10 +94,16 @@ if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-if (NOT DEFINED THIRDPARTY_DIR)
-    get_third_party_dir(THIRDPARTY_DIR)
+if(DEFINED THIRDPARTY_DIR)
+    # An explicit thirdparty location overrides discovery; the super root
+    # still derives from it.
+    get_filename_component(PROJECT_SUPER_ROOT "${THIRDPARTY_DIR}/../" ABSOLUTE)
+else()
+    # The super root is the master: resolve it up front, well before any
+    # release download; thirdparty lives under it.
+    get_project_super_root(PROJECT_SUPER_ROOT)
+    set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
 endif()
-get_filename_component(PROJECT_SUPER_ROOT "${THIRDPARTY_DIR}/../" ABSOLUTE)
 if(NOT DEFINED PROJECT_ROOT_NAME)
     # Get absolute path
     cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../..")

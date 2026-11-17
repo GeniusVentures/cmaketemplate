@@ -205,22 +205,50 @@ endfunction()
 # If thirdparty is not on disk, falls back to the parent of the
 # current git repository (repo-root/../) — enough to let the build
 # proceed to the point where it can download thirdparty itself.
-function(get_third_party_dir RESULT_VAR)
+# Resolves the super root — the directory that owns thirdparty/ (and sibling
+# dependencies such as zkLLVM/). Resolution order:
+#   1. Walk-up: the nearest ancestor whose thirdparty/ is a canonical
+#      GeniusVentures/thirdparty clone.
+#   2. Fallback: the top-level git repo enclosing the consuming repo (a
+#      workspace repo owns thirdparty inside itself); when the consuming
+#      repo IS the top level, its parent (thirdparty beside it, never
+#      inside it). The release-download path materializes
+#      PROJECT_SUPER_ROOT/thirdparty there, so a fresh machine that
+#      bootstraps from a release archive resolves to the same place on every
+#      later configure.
+function(get_project_super_root RESULT_VAR)
     find_package(Git REQUIRED)
 
-    # ── Resolve the current git repo root (for fallback) ──────────
+    # ── Default super root (fallback) ─────────────────────────────
     execute_process(
-        COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --show-superproject-working-tree
         WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-        OUTPUT_VARIABLE _repo_root
+        OUTPUT_VARIABLE _superproject
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE _repo_result
+        RESULT_VARIABLE _superproject_result
         ERROR_QUIET
     )
-    if(_repo_result EQUAL 0 AND NOT "${_repo_root}" STREQUAL "")
-        file(REAL_PATH "${_repo_root}/../" _fallback)
+    if(_superproject_result EQUAL 0 AND NOT "${_superproject}" STREQUAL "")
+        file(REAL_PATH "${_superproject}" _fallback)
+        # Climb while the parent directory is itself a repository (nested
+        # clone or submodule checkout); the topmost one is the super root.
+        set(_climbed FALSE)
+        while(TRUE)
+            cmake_path(SET _parent "${_fallback}/.." NORMALIZE)
+            if(NOT EXISTS "${_parent}/.git")
+                break()
+            endif()
+            file(REAL_PATH "${_parent}" _fallback)
+            set(_climbed TRUE)
+        endwhile()
+        if(NOT _climbed)
+            # Consuming repo is the top level → thirdparty beside it.
+            file(REAL_PATH "${_fallback}/.." _fallback)
+        endif()
     else()
-        file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/../" _fallback)
+        # Vendored (not a submodule): anchor on this file's own location
+        # (<consumer>/build/cmake) — independent of the call site.
+        file(REAL_PATH "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../.." _fallback)
     endif()
 
     # ── Walk up looking for the canonical thirdparty ──────────────
@@ -237,8 +265,9 @@ function(get_third_party_dir RESULT_VAR)
                 ERROR_QUIET
             )
             if(_result EQUAL 0 AND _remote MATCHES "GeniusVentures/thirdparty")
-                set(${RESULT_VAR} "${_candidate}" PARENT_SCOPE)
-                message(STATUS "Found thirdparty: ${_candidate}")
+                file(REAL_PATH "${_current}/.." _super_root)
+                set(${RESULT_VAR} "${_super_root}" PARENT_SCOPE)
+                message(STATUS "Found thirdparty super root: ${_super_root}")
                 return()
             endif()
         endif()
@@ -250,11 +279,17 @@ function(get_third_party_dir RESULT_VAR)
             # On Unix the root normalises to "/"; on Windows repeated
             # "../" on e.g. "C:/" stays at "C:/", so we detect the
             # stall instead of looping forever.
-            message(WARNING "Thirdparty directory not found (reached filesystem root), using fallback: ${_fallback}")
+            message(WARNING "Thirdparty super root not found (reached filesystem root), using fallback: ${_fallback}")
             set(${RESULT_VAR} "${_fallback}" PARENT_SCOPE)
             return()
         endif()
     endwhile()
+endfunction()
+
+# The thirdparty directory owned by the resolved super root.
+function(get_third_party_dir RESULT_VAR)
+    get_project_super_root(_super_root)
+    set(${RESULT_VAR} "${_super_root}/thirdparty" PARENT_SCOPE)
 endfunction()
 
 # Sets BUILD_TARGET_OS — the predefined platform being built
