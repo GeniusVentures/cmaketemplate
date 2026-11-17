@@ -224,13 +224,15 @@ else()
     set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
     # Download the latest release
     execute_process(
-        COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
+        COMMAND curl -L -f -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
         RESULT_VARIABLE DOWNLOAD_RESULT
     )
 
     if(NOT DOWNLOAD_RESULT EQUAL 0)
         message(FATAL_ERROR "Failed to download thirdparty archive from ${THIRDPARTY_RELEASE_URL}")
     endif()
+
+    file(MAKE_DIRECTORY "${THIRDPARTY_EXTRACT_DIR}")
 
     # Extract the archive to the correct location
     execute_process(
