@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.22)
 include(../cmake/functions.cmake)
 get_default_root()
 
+# Whole-archive linking style for cmake/functions.cmake (_whole_archive_link)
+set(WHOLE_ARCHIVE_STYLE "WRAP")
+
 if(NOT DEFINED PROJECT_NAME)
     set(PROJECT_NAME ${PROJECT_ROOT_NAME} CACHE STRING "Default Project Name")
 endif()
@@ -37,6 +40,13 @@ include(../CommonCompilerOptions.cmake)
 
 # Set extra compiler flags
 set(EXTRA_CXX_FLAGS)
+
+# where to add shared libraries for and executable package
+set(APP_RUNTIME_LIB_DIR "lib")
+set(APP_LINK_OPTIONS "")
+set(APP_LINK_LIBRARIES "uuid")
+set(APP_RPATH_EXE "\$ORIGIN/../${APP_RUNTIME_LIB_DIR}")
+set(APP_RPATH_LIB "$ORIGIN")
 
 # Include common build parameters
 include(../CommonBuildParameters.cmake)

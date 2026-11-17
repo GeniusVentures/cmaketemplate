@@ -41,6 +41,12 @@ if(DEFINED SANITIZE_CODE)
     endif()
 endif()
 
+# GNUInstallDirs resolves lib64 on RedHat-family 64-bit Linux (AlmaLinux 8)
+# but lib on Debian/Windows/macOS. Downstream consumers and the historical
+# release layout expect lib. Pin the install libdir so EL8 hosts produce
+# identical artifacts (no-op elsewhere, where GNUInstallDirs already
+# resolves lib).
+set(CMAKE_INSTALL_LIBDIR lib)
 include(GNUInstallDirs)
 
 set(CPACK_PACKAGE_VENDOR "Genius Ventures" CACHE STRING "The Package Vendor default")
@@ -88,10 +94,16 @@ if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
     print("Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-if (NOT DEFINED THIRDPARTY_DIR)
-    get_third_party_dir(THIRDPARTY_DIR)
+if(DEFINED THIRDPARTY_DIR)
+    # An explicit thirdparty location overrides discovery; the super root
+    # still derives from it.
+    get_filename_component(PROJECT_SUPER_ROOT "${THIRDPARTY_DIR}/../" ABSOLUTE)
+else()
+    # The super root is the master: resolve it up front, well before any
+    # release download; thirdparty lives under it.
+    get_project_super_root(PROJECT_SUPER_ROOT)
+    set(THIRDPARTY_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
 endif()
-get_filename_component(PROJECT_SUPER_ROOT "${THIRDPARTY_DIR}/../" ABSOLUTE)
 if(NOT DEFINED PROJECT_ROOT_NAME)
     # Get absolute path
     cmake_path(SET PROJECT_ROOT_NAME NORMALIZE "${CMAKE_CURRENT_LIST_DIR}/../..")
@@ -218,13 +230,15 @@ else()
     set(THIRDPARTY_EXTRACT_DIR "${PROJECT_SUPER_ROOT}/thirdparty")
     # Download the latest release
     execute_process(
-        COMMAND curl -L -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
+        COMMAND curl -L -f -o ${THIRDPARTY_ARCHIVE} ${THIRDPARTY_RELEASE_URL}
         RESULT_VARIABLE DOWNLOAD_RESULT
     )
 
     if(NOT DOWNLOAD_RESULT EQUAL 0)
         message(FATAL_ERROR "Failed to download thirdparty archive from ${THIRDPARTY_RELEASE_URL}")
     endif()
+
+    file(MAKE_DIRECTORY "${THIRDPARTY_EXTRACT_DIR}")
 
     # Extract the archive to the correct location
     execute_process(

@@ -49,7 +49,12 @@ function(addtest_mock test_name)
     disable_clang_tidy(${test_name})
 endfunction()
 
-function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
+# compile_proto_to_cpp(PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Required: there is no PROJECT_ROOT fallback because a
+#   submodule built via add_subdirectory() has PROJECT_ROOT pointing at the
+#   parent repo, not its own src tree.
+function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO_SRC_ROOT PROTO)
     get_target_property(Protobuf_INCLUDE_DIR protobuf::libprotobuf INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(Protobuf_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION)
 
@@ -62,8 +67,14 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
 
     get_filename_component(PROTO_ABS "${PROTO}" REALPATH)
 
-    # get relative (to CMAKE_BINARY_DIR) path of current proto file
-    file(RELATIVE_PATH SCHEMA_REL "${CMAKE_BINARY_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}")
+    # Generated subpath mirrors protoc's own --cpp_out layout rule: the proto
+    # file's directory relative to PROTO_SRC_ROOT (the -I root it resolves
+    # against). Deriving from CMAKE_CURRENT_BINARY_DIR instead assumed the
+    # module's binary dir mirrors ${CMAKE_BINARY_DIR}/src/<rel>, which is false
+    # for add_subdirectory consumers (e.g. GNUS-NEO-SWARM nested in
+    # GeniusCognitiveSystem at ${CMAKE_BINARY_DIR}/GNUS-NEO-SWARM/src/...).
+    file(RELATIVE_PATH SCHEMA_REL "${PROTO_SRC_ROOT}" "${PROTO_ABS}")
+    get_filename_component(SCHEMA_REL "${SCHEMA_REL}" DIRECTORY)
     set(SCHEMA_OUT_DIR ${CMAKE_BINARY_DIR}/generated)
     file(MAKE_DIRECTORY ${SCHEMA_OUT_DIR})
 
@@ -76,7 +87,7 @@ function(compile_proto_to_cpp PB_H PB_CC PB_REL_PATH PROTO)
   add_custom_command(
           OUTPUT ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB_HEADER} ${SCHEMA_OUT_DIR}/${SCHEMA_REL}/${GEN_PB}
           COMMAND ${GEN_COMMAND}
-          ARGS -I${PROJECT_ROOT}/src -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
+          ARGS -I${PROTO_SRC_ROOT} -I${GEN_ARGS} --cpp_out=${SCHEMA_OUT_DIR} ${PROTO_ABS}
           WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
           DEPENDS ${PROTO_ABS} protobuf::protoc
           VERBATIM
@@ -93,12 +104,15 @@ if(NOT TARGET generated)
     )
 endif()
 
-function(add_proto_library NAME)
+# add_proto_library(NAME PROTO_SRC_ROOT proto1.proto [proto2.proto ...])
+#   PROTO_SRC_ROOT — the repo's src root that proto import paths resolve against
+#   (e.g. <repo>/src). Forwarded to compile_proto_to_cpp. Required — no default.
+function(add_proto_library NAME PROTO_SRC_ROOT)
     set(SOURCES "")
     set(HEADERS "")
     set(PB_REL_PATH "")
     foreach(PROTO IN ITEMS ${ARGN})
-        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO})
+        compile_proto_to_cpp(H C PB_REL_PATH ${PROTO_SRC_ROOT} ${PROTO})
         list(APPEND SOURCES ${H} ${C})
         list(APPEND HEADERS ${H})
     endforeach()
@@ -160,44 +174,30 @@ function(get_default_root)
 endfunction()
 
 
-function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
+# Platform whole-archive settings are configured per-OS in build/<OS>/CMakeLists.txt:
+#   WHOLE_ARCHIVE_STYLE   — FORCE_LOAD (per-lib link option) or WRAP (linker flags around libs)
+#   WHOLE_ARCHIVE_OPTION  — LINKER: prefix for the FORCE_LOAD style
+function(_whole_archive_link target visibility)
+    if(WHOLE_ARCHIVE_STYLE STREQUAL "FORCE_LOAD")
+        foreach(arg ${ARGN})
+            target_link_options(${target} ${visibility}
+                "${WHOLE_ARCHIVE_OPTION}$<TARGET_FILE:${arg}>"
             )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+        endforeach()
+    else()
+        target_link_libraries(${target} ${visibility}
+            "-Wl,--whole-archive" ${ARGN} "-Wl,--no-whole-archive"
+        )
+    endif()
+    target_link_libraries(${target} ${visibility} ${ARGN})
+endfunction()
+
+function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE target)
+    _whole_archive_link(${target} PRIVATE ${ARGN})
 endfunction()
 
 function(TARGET_LINK_LIBRARIES_WHOLE_ARCHIVE_PUB target)
-    IF(WIN32)
-        FOREACH(arg ${ARGN})
-            target_link_libraries(${target} PUBLIC ${arg})
-            SET_TARGET_PROPERTIES(
-                ${target} PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:${arg}"
-            )
-        ENDFOREACH()
-    ELSE()
-        IF(APPLE)
-            SET(LINK_FLAGS "-Wl,-force_load")
-            SET(UNDO_FLAGS "")
-        ELSE()
-            SET(LINK_FLAGS "-Wl,--whole-archive")
-            SET(UNDO_FLAGS "-Wl,--no-whole-archive")
-        ENDIF()
-        target_link_libraries(${target} PUBLIC ${LINK_FLAGS} ${ARGN} ${UNDO_FLAGS})
-    ENDIF()
+    _whole_archive_link(${target} PUBLIC ${ARGN})
 endfunction()
 
 # Finds the thirdparty subdirectory.  Walks up until it locates
@@ -205,22 +205,50 @@ endfunction()
 # If thirdparty is not on disk, falls back to the parent of the
 # current git repository (repo-root/../) — enough to let the build
 # proceed to the point where it can download thirdparty itself.
-function(get_third_party_dir RESULT_VAR)
+# Resolves the super root — the directory that owns thirdparty/ (and sibling
+# dependencies such as zkLLVM/). Resolution order:
+#   1. Walk-up: the nearest ancestor whose thirdparty/ is a canonical
+#      GeniusVentures/thirdparty clone.
+#   2. Fallback: the top-level git repo enclosing the consuming repo (a
+#      workspace repo owns thirdparty inside itself); when the consuming
+#      repo IS the top level, its parent (thirdparty beside it, never
+#      inside it). The release-download path materializes
+#      PROJECT_SUPER_ROOT/thirdparty there, so a fresh machine that
+#      bootstraps from a release archive resolves to the same place on every
+#      later configure.
+function(get_project_super_root RESULT_VAR)
     find_package(Git REQUIRED)
 
-    # ── Resolve the current git repo root (for fallback) ──────────
+    # ── Default super root (fallback) ─────────────────────────────
     execute_process(
-        COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --show-superproject-working-tree
         WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-        OUTPUT_VARIABLE _repo_root
+        OUTPUT_VARIABLE _superproject
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE _repo_result
+        RESULT_VARIABLE _superproject_result
         ERROR_QUIET
     )
-    if(_repo_result EQUAL 0 AND NOT "${_repo_root}" STREQUAL "")
-        file(REAL_PATH "${_repo_root}/../" _fallback)
+    if(_superproject_result EQUAL 0 AND NOT "${_superproject}" STREQUAL "")
+        file(REAL_PATH "${_superproject}" _fallback)
+        # Climb while the parent directory is itself a repository (nested
+        # clone or submodule checkout); the topmost one is the super root.
+        set(_climbed FALSE)
+        while(TRUE)
+            cmake_path(SET _parent "${_fallback}/.." NORMALIZE)
+            if(NOT EXISTS "${_parent}/.git")
+                break()
+            endif()
+            file(REAL_PATH "${_parent}" _fallback)
+            set(_climbed TRUE)
+        endwhile()
+        if(NOT _climbed)
+            # Consuming repo is the top level → thirdparty beside it.
+            file(REAL_PATH "${_fallback}/.." _fallback)
+        endif()
     else()
-        file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/../" _fallback)
+        # Vendored (not a submodule): anchor on this file's own location
+        # (<consumer>/build/cmake) — independent of the call site.
+        file(REAL_PATH "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../.." _fallback)
     endif()
 
     # ── Walk up looking for the canonical thirdparty ──────────────
@@ -237,8 +265,9 @@ function(get_third_party_dir RESULT_VAR)
                 ERROR_QUIET
             )
             if(_result EQUAL 0 AND _remote MATCHES "GeniusVentures/thirdparty")
-                set(${RESULT_VAR} "${_candidate}" PARENT_SCOPE)
-                message(STATUS "Found thirdparty: ${_candidate}")
+                file(REAL_PATH "${_current}/.." _super_root)
+                set(${RESULT_VAR} "${_super_root}" PARENT_SCOPE)
+                message(STATUS "Found thirdparty super root: ${_super_root}")
                 return()
             endif()
         endif()
@@ -250,9 +279,31 @@ function(get_third_party_dir RESULT_VAR)
             # On Unix the root normalises to "/"; on Windows repeated
             # "../" on e.g. "C:/" stays at "C:/", so we detect the
             # stall instead of looping forever.
-            message(WARNING "Thirdparty directory not found (reached filesystem root), using fallback: ${_fallback}")
+            message(WARNING "Thirdparty super root not found (reached filesystem root), using fallback: ${_fallback}")
             set(${RESULT_VAR} "${_fallback}" PARENT_SCOPE)
             return()
         endif()
     endwhile()
+endfunction()
+
+# The thirdparty directory owned by the resolved super root.
+function(get_third_party_dir RESULT_VAR)
+    get_project_super_root(_super_root)
+    set(${RESULT_VAR} "${_super_root}/thirdparty" PARENT_SCOPE)
+endfunction()
+
+# Sets BUILD_TARGET_OS — the predefined platform being built
+# (OSX/Windows/Linux/iOS/Android). CMAKE_SYSTEM_NAME is the only divergent
+# name ("Darwin" for macOS), so the mapping lives here, once: consumers
+# derive the platform through this function instead of gating on
+# CMAKE_SYSTEM_NAME. CACHE (not PARENT_SCOPE) so the value is visible in any
+# scope the moment the function is called, regardless of include order
+# (per-platform fragments glob-included by the project's
+# cmake/platform.cmake read it in their own scope).
+function(define_build_target_os)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(BUILD_TARGET_OS "OSX" CACHE STRING "Target OS being built" FORCE)
+    else()
+        set(BUILD_TARGET_OS "${CMAKE_SYSTEM_NAME}" CACHE STRING "Target OS being built" FORCE)
+    endif()
 endfunction()
